@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <title>POS System - 员工端</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div id="app-container">
+      <aside id="category-nav">
+        <h3 class="header">菜单类别</h3>
+        <div id="category-list"></div>
+        <button id="show-report-btn">导出流水</button>
+      </aside>
+
+      <main id="product-area">
+        <h3 class="header" id="current-category-name">请选择商品</h3>
+        <div id="product-grid"></div>
+      </main>
+
+      <section id="cart-checkout">
+        <h3 class="header">当前订单</h3>
+        <ul id="cart-list"></ul>
+
+        <div id="totals">
+          <!-- <div class="total-line">
+            <span>总计金额:</span>
+            <span id="sub-total">¥ 0.00</span>
+          </div> -->
+          <div class="total-line grand-total">
+            <span>应付金额:</span>
+            <span id="grand-total">¥ 0.00</span>
+          </div>
+        </div>
+
+        <button id="checkout-btn" disabled>立即结账</button>
+      </section>
+    </div>
+
+    <div id="report-modal" class="modal">
+      <div class="modal-content">
+        <h3>导出销售流水</h3>
+        <label for="start-date">开始日期:</label>
+        <input type="date" id="start-date" />
+        <label for="end-date">结束日期:</label>
+        <input type="date" id="end-date" />
+        <button id="export-csv-btn">导出 CSV</button>
+        <button id="close-modal-btn">关闭</button>
+      </div>
+    </div>
+
+    <script src="script.js"></script>
+  </body>
+</html>

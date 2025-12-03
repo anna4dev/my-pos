@@ -1,0 +1,25 @@
+{
+  "name": "my-pos",
+  "version": "1.0.0",
+  "description": "",
+  "main": "main.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "rebuild": "electron-rebuild -f -w better-sqlite3",
+    "start": "electron .",
+    "dev": "npm run rebuild && npm start",
+    "init-data": "npm rebuild && node init_data.js",
+    "pack": "electron-builder --win --x64"
+  },
+  "author": "anna4code",
+  "license": "ISC",
+  "devDependencies": {
+    "electron": "^22.3.27",
+    "electron-builder": "^24.9.1",
+    "electron-rebuild": "^3.2.9"
+  },
+  "dependencies": {
+    "better-sqlite3": "^8.6.0",
+    "csv-writer": "^1.6.0"
+  }
+}

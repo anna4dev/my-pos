@@ -1,0 +1,268 @@
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+  background-color: #f4f4f4;
+}
+
+#app-container {
+  display: flex;
+  height: 100vh;
+  box-sizing: border-box;
+}
+
+.header {
+  background-color: #3f51b5;
+  color: white;
+  padding: 15px;
+  margin: 0 0 10px 0;
+  font-size: 1.2em;
+}
+
+/* 类别导航 (左侧) */
+#category-nav {
+  width: 200px;
+  background-color: #ffffff;
+  box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+}
+
+#category-list {
+  flex-grow: 1;
+  padding: 10px;
+  overflow-y: auto;
+}
+
+.category-btn {
+  width: 100%;
+  padding: 15px;
+  margin-bottom: 5px;
+  background-color: #eee;
+  border: none;
+  cursor: pointer;
+  font-size: 1em;
+  transition: background-color 0.2s;
+}
+
+.category-btn:hover {
+  background-color: #ddd;
+}
+
+.category-btn.active {
+  background-color: #3f51b5;
+  color: white;
+  font-weight: bold;
+}
+
+/* 商品区 (中间) */
+#product-area {
+  flex-grow: 1;
+  padding: 0;
+  overflow-y: hidden;
+}
+
+#product-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 15px;
+  padding: 15px;
+  overflow-y: auto;
+}
+
+.product-card {
+  background-color: white;
+  padding: 15px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  text-align: center;
+  cursor: pointer;
+  transition: transform 0.1s;
+}
+
+.product-card.has-options {
+  cursor: default; /* 有选项时，卡片主体不应该有点击手势 */
+}
+
+.product-option-buttons {
+  margin-top: 10px;
+  padding-top: 8px;
+  display: flex;
+  justify-content: space-around;
+  gap: 8px; /* 按钮间距 */
+}
+
+.option-choice-btn {
+  flex-grow: 1;
+  padding: 10px 5px; /* 增加高度，更容易点击 */
+  font-size: 1.1em;
+  font-weight: bold;
+  /* 样式美化 */
+  border: 1px solid #3f51b5;
+  background-color: #e8eaf6;
+  color: #3f51b5;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.option-choice-btn:hover {
+  background-color: #c5cae9;
+}
+
+.option-choice-btn:active {
+  transform: scale(0.98); /* 增加按压反馈 */
+}
+
+.product-name {
+  font-weight: bold;
+  margin-bottom: 5px;
+}
+
+.product-price {
+  color: #4caf50;
+  font-size: 1.1em;
+}
+
+/* 购物车 (右侧) */
+#cart-checkout {
+  width: 350px;
+  background-color: #ffffff;
+  border-left: 1px solid #ccc;
+  display: flex;
+  flex-direction: column;
+}
+
+#cart-list {
+  list-style: none;
+  padding: 10px 15px;
+  margin: 0;
+  flex-grow: 1;
+  overflow-y: auto;
+}
+
+.cart-item {
+  display: flex;
+  flex-direction: column; /* 关键：让子元素 (两行) 垂直堆叠 */
+  padding: 8px 0;
+  border-bottom: 1px dashed #eee;
+  font-size: 0.95em;
+}
+
+/* 主内容行 (商品名和价格 - 放在同一行) */
+.item-main-row {
+  display: flex;
+  justify-content: space-between; /* 名称推到左边，价格推到右边 */
+  width: 100%;
+  margin-bottom: 5px; /* 与控制行之间留一点间距 */
+}
+
+.item-info {
+  flex-grow: 1;
+}
+
+.item-options {
+  font-size: 0.8em;
+  color: #666;
+  margin-left: 10px;
+}
+
+.item-price {
+  font-weight: bold;
+  color: #3f51b5;
+  margin-left: 10px;
+}
+
+.item-controls-row {
+  width: 100%;
+  text-align: right;
+  padding-right: 5px; /* 稍微靠右边留出一点空隙 */
+}
+
+.item-controls button {
+  background-color: #fce4ec;
+  border: 1px solid #e91e63;
+  color: #e91e63;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-weight: bold;
+  cursor: pointer;
+  margin-left: 8px; /* 按钮之间的间距 */
+  min-width: 30px;
+  font-size: 1.1em;
+  font-weight: 900; /* 使用更粗的字重 */
+  line-height: 1; /* 确保符号居中 */
+}
+
+#totals {
+  padding: 15px;
+  border-top: 2px solid #3f51b5;
+}
+
+.total-line {
+  display: flex;
+  justify-content: space-between;
+  padding: 5px 0;
+}
+
+.grand-total {
+  font-size: 1.5em;
+  font-weight: bold;
+  color: #e91e63;
+}
+
+#checkout-btn,
+#show-report-btn {
+  padding: 20px;
+  background-color: #e91e63;
+  color: white;
+  border: none;
+  cursor: pointer;
+  font-size: 1.3em;
+  transition: background-color 0.2s;
+}
+
+#checkout-btn:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+
+#show-report-btn {
+  background-color: #4caf50;
+  margin: 10px;
+  border-radius: 4px;
+}
+
+/* Modal 样式 */
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: none; /* 默认隐藏 */
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background-color: white;
+  padding: 30px;
+  border-radius: 8px;
+  width: 400px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+}
+
+.modal-content input,
+.modal-content button {
+  width: 100%;
+  padding: 10px;
+  margin: 10px 0;
+  box-sizing: border-box;
+}
+
+#close-modal-btn {
+  background-color: #f44336;
+  color: white;
+}

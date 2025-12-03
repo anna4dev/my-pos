@@ -1,0 +1,102 @@
+body {
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  margin: 0;
+  padding: 0;
+  background-color: #004d40; /* 深绿色背景，突出显示 */
+  color: white;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+#display-container {
+  display: flex;
+  flex-direction: column;
+  height: 96%;
+  padding: 20px;
+}
+
+header {
+  text-align: center;
+  padding: 10px 0;
+  border-bottom: 2px solid #4caf50;
+}
+
+h1 {
+  font-size: 2.5em;
+  margin: 0;
+}
+
+/* 列表区 */
+#item-list-area {
+  flex-grow: 1;
+  overflow-y: auto;
+  margin-top: 20px;
+  padding-right: 10px;
+}
+
+#customer-cart-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  font-size: 1.5em;
+}
+
+.cart-header,
+.customer-item {
+  display: grid;
+  grid-template-columns: 3fr 1fr 1fr 2fr;
+  padding: 15px 0;
+  border-bottom: 1px dashed rgba(255, 255, 255, 0.5);
+  align-items: center;
+}
+
+.cart-header {
+  font-weight: bold;
+  font-size: 1.2em;
+  border-bottom: 2px solid white;
+  margin-bottom: 10px;
+}
+
+#empty-message {
+  text-align: center;
+  padding: 50px;
+  font-size: 2em;
+  color: #a5d6a7;
+}
+
+.item-name {
+  font-weight: bold;
+}
+
+.item-options {
+  font-size: 0.8em;
+  color: #bdbdbd;
+}
+
+.center {
+  text-align: center;
+}
+
+/* 底部总金额 (最重要) */
+#total-area {
+  margin-top: 20px;
+  padding: 20px;
+  background-color: #4caf50;
+  border-radius: 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.total-label {
+  font-size: 2em;
+  font-weight: 300;
+}
+
+#customer-total {
+  font-size: 3em; /* 超大字体 */
+  font-weight: bold;
+  color: white;
+}

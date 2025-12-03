@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <title>POS System - 客显</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div id="display-container">
+      <header>
+        <h1>欢迎光临！正在为您点单...</h1>
+      </header>
+
+      <main id="item-list-area">
+        <ul id="customer-cart-list">
+          <li class="cart-header">
+            <span>商品</span>
+            <span class="center">数量</span>
+            <span class="center">单价</span>
+            <span class="center">小计</span>
+          </li>
+          <li id="empty-message">请开始点单</li>
+        </ul>
+      </main>
+
+      <footer id="total-area">
+        <div class="total-label">总计金额:</div>
+        <div id="customer-total">¥ 0.00</div>
+      </footer>
+    </div>
+    <script src="../preload.js"></script>
+    <script src="script.js"></script>
+  </body>
+</html>
