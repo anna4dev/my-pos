@@ -3,7 +3,11 @@ const state = {
     categories: [],
     products: [],
     cart: [], // 结构: { id, name, price, options: [], count, categoryName, categoryId }
-    currentCategoryId: null
+    currentCategoryId: null,
+    orderListPage: 1,
+    ordersPerPage: 10,
+    totalOrders: 0,
+    totalPages: 0,
 };
 
 // --- DOM 元素缓存 ---
@@ -19,8 +23,17 @@ const elements = {
     closeModalBtn: document.getElementById('close-modal-btn'),
     startDateInput: document.getElementById('start-date'),
     endDateInput: document.getElementById('end-date'),
-    // subTotal: document.getElementById('sub-total'),
+    showOrderHistoryBtn: document.getElementById('show-orders-btn'),
+    orderListView: document.getElementById('order-list-view'),
+    mainDiv: document.getElementById('app-container'),
 };
+
+function createEl(tag, className, textContent) {
+    const el = document.createElement(tag);
+    if (className) el.className = className;
+    if (textContent !== undefined) el.textContent = textContent;
+    return el;
+}
 
 // --- 渲染函数 ---
 
@@ -173,7 +186,6 @@ function renderCart() {
 
     // ... (其余代码不变)
     const displayTotal = (total / 100).toFixed(2);
-    // elements.subTotal.textContent = `¥ ${displayTotal}`;
     elements.grandTotal.textContent = `¥ ${displayTotal}`;
     elements.checkoutBtn.disabled = state.cart.length === 0;
 
@@ -321,7 +333,7 @@ async function handleCheckout() {
     if (result.success) {
         alert(`结账成功！订单号: ${result.orderNo}. 总金额: ¥ ${(total / 100).toFixed(2)}`);
 
-        // 🚀 调用打印小票
+        // 调用打印小票
         const printResult = await window.api.printReceipt({
             items: state.cart, 
             total: total,
@@ -340,7 +352,7 @@ async function handleCheckout() {
         alert(`结账失败: ${result.error || '数据库错误'}`);
     }
 
-    elements.checkoutBtn.disabled = false;
+    elements.checkoutBtn.disabled = true;
     elements.checkoutBtn.textContent = '立即结账';
 }
 
@@ -430,6 +442,292 @@ async function handleExportCsv() {
     }
 }
 
+function showOrderListView() {
+    elements.mainDiv.style.display = 'none';
+    elements.orderListView.style.display = 'block';
+    // 确保报告模式关闭
+    elements.reportModal.style.display = 'none'; 
+}
+
+function showProductGridView() {
+    elements.mainDiv.style.display = 'flex';
+    elements.orderListView.style.display = 'none';
+}
+
+// ----------------------------------------------------
+// 订单列表处理函数
+// ----------------------------------------------------
+
+// 切换到订单列表视图并加载第一页
+function handleShowOrderHistory() {
+    showOrderListView();
+    // 每次进入时，从第一页开始加载
+    loadOrders(1); 
+}
+
+// 异步加载订单数据
+async function loadOrders(page) {
+    state.orderListPage = page;
+
+    // 创建并显示加载覆盖层
+    const overlay = document.createElement('div');
+    overlay.className = 'loading-overlay';
+    overlay.textContent = '加载中...';
+    
+    // 插入到 orderListView 中，覆盖其内容
+    elements.orderListView.appendChild(overlay); 
+
+    const limit = state.ordersPerPage;
+    const offset = (page - 1) * limit;
+
+    const result = await window.api.getPaginatedOrders({ limit, offset }); 
+
+    // 无论成功或失败，先移除覆盖层
+    elements.orderListView.removeChild(overlay); 
+
+    if (result.success) {
+        state.totalOrders = result.totalCount;
+        state.totalPages = Math.ceil(result.totalCount / limit);
+        
+        // 渲染新列表，这会替换旧内容
+        renderOrderList(result.data); 
+    } else {
+        // 只在加载失败时显示错误消息，避免清空成功内容        
+        const errorEl = document.createElement('p');
+        errorEl.className = 'error-message';
+        errorEl.textContent = `加载失败: ${result.error}`;
+        elements.orderListView.appendChild(errorEl);
+    }
+}
+
+// 渲染订单列表和分页控件
+
+// 渲染分页按钮
+function renderPaginationControls() {
+    if (state.totalPages <= 1) return null; 
+    
+    const paginationDiv = createEl('div', 'pagination');
+
+    // --- 上一页 Button ---
+    const prevBtn = createEl('button', 'page-btn', '上一页');
+    prevBtn.dataset.page = state.orderListPage - 1;
+    if (state.orderListPage === 1) {
+        prevBtn.disabled = true;
+    }
+    paginationDiv.appendChild(prevBtn);
+
+    // --- 页面数字 Buttons ---
+    for (let i = 1; i <= state.totalPages; i++) {
+        const pageBtn = createEl('button', 'page-btn', i);
+        pageBtn.dataset.page = i;
+        if (i === state.orderListPage) {
+            pageBtn.classList.add('active');
+        }
+        paginationDiv.appendChild(pageBtn);
+    }
+
+    // --- 下一页 Button ---
+    const nextBtn = createEl('button', 'page-btn', '下一页');
+    nextBtn.dataset.page = state.orderListPage + 1;
+    if (state.orderListPage === state.totalPages) {
+        nextBtn.disabled = true;
+    }
+    paginationDiv.appendChild(nextBtn);
+
+    // --- Info Span ---
+    const infoSpan = createEl('span', null, `共 ${state.totalOrders} 条记录 / ${state.totalPages} 页`);
+    paginationDiv.appendChild(infoSpan);
+
+    return paginationDiv; // 返回 DOM 元素
+}
+
+function renderOrderList(orders) {
+    elements.orderListView.innerHTML = ''; 
+
+    // 构造：返回按钮和标题 (Header)
+    const headerDiv = createEl('div', 'order-list-header');
+    
+    const backBtn = createEl('button', 'control-btn', '← 返回商品列表');
+    backBtn.id = 'back-to-products-btn';
+    
+    const titleH2 = createEl('h2', null, '历史订单列表');
+    
+    const infoSpan = createEl('span', null, `共 ${state.totalOrders} 条记录 / ${state.totalPages} 页`);
+    
+    headerDiv.appendChild(backBtn);
+    headerDiv.appendChild(titleH2);
+    headerDiv.appendChild(infoSpan);
+    
+    elements.orderListView.appendChild(headerDiv);
+
+    // 处理无数据情况
+    if (orders.length === 0) {
+        elements.orderListView.appendChild(createEl('p', null, '没有找到任何订单记录。'));
+        
+        // 绑定返回按钮事件 (即使没有数据，也要能返回)
+        backBtn.addEventListener('click', showProductGridView);
+        return;
+    }
+
+    // 构造：订单列表表格
+    const table = createEl('table', 'order-table');
+    const thead = createEl('thead');
+    const tbody = createEl('tbody');
+
+    // 表头
+    const headerRow = createEl('tr');
+    ['订单号', '总金额', '时间', '明细'].forEach(text => {
+        headerRow.appendChild(createEl('th', null, text));
+    });
+    thead.appendChild(headerRow);
+    table.appendChild(thead);
+
+    // 表格内容
+    orders.forEach(order => {
+        const row = createEl('tr');
+        row.dataset.orderId = order.id;
+        
+        const totalDisplay = (order.total_amount / 100).toFixed(2);
+        
+        row.appendChild(createEl('td', null, order.order_no));
+        row.appendChild(createEl('td', null, `¥ ${totalDisplay}`));
+        row.appendChild(createEl('td', null, new Date(order.created_at).toLocaleString()));
+        
+        // 明细按钮
+        const detailCell = createEl('td');
+        const detailBtn = createEl('button', 'detail-btn', '查看');
+        detailBtn.dataset.id = order.id;
+        detailCell.appendChild(detailBtn);
+        row.appendChild(detailCell);
+        
+        tbody.appendChild(row);
+    });
+    table.appendChild(tbody);
+    elements.orderListView.appendChild(table);
+
+    // 构造：分页控件
+    // 这里暂时使用原始的字符串拼接返回，但最好也进行重构。
+    const paginationControls = renderPaginationControls();
+    if (paginationControls) {
+        elements.orderListView.appendChild(paginationControls);
+
+        // 绑定分页按钮事件 (直接 targeting the returned element)
+        paginationControls.querySelectorAll('.page-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const newPage = parseInt(e.target.dataset.page);
+                if (newPage > 0 && newPage <= state.totalPages) {
+                    loadOrders(newPage);
+                }
+            });
+        });
+    }
+        
+    // 绑定事件监听器：返回按钮
+    backBtn.addEventListener('click', showProductGridView);
+
+    // 绑定明细按钮
+    elements.orderListView.querySelectorAll('.detail-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const orderId = parseInt(e.target.dataset.id);
+            showOrderDetailModal(orderId); 
+        });
+    });
+}
+
+// ⚠️ 占位符：需要实现订单明细的弹窗
+async function showOrderDetailModal(orderId) {
+    // 2. 异步获取数据
+    const result = await window.api.getOrderDetails(orderId);
+
+    if (!result.success || !result.data) {
+        alert(`加载订单 ${orderId} 失败: ${result.error || '订单不存在或加载错误'}`);
+        return;
+    }
+
+    const orderData = result.data;
+    
+    // 3. 构建模态框的 DOM 结构 (backdrop + content)
+    
+    // Backdrop: 覆盖整个屏幕，用于关闭
+    const modal = document.createElement('div');
+    modal.className = 'modal-backdrop'; 
+    modal.id = 'order-detail-modal';
+    
+    // Content Box: 实际的弹窗内容
+    const contentBox = document.createElement('div');
+    contentBox.className = 'modal-content';
+
+    // 4. 渲染订单明细
+    contentBox.appendChild(renderOrderDetails(orderData));
+
+    // 5. 添加关闭按钮
+    const closeBtn = createEl('button', 'modal-close-btn', '关闭');
+    // 点击关闭按钮或点击背景时关闭模态框
+    closeBtn.onclick = () => document.body.removeChild(modal);
+    
+    // 点击背景时关闭
+    modal.onclick = (e) => {
+        if (e.target === modal) {
+            document.body.removeChild(modal);
+        }
+    };
+    
+    contentBox.appendChild(closeBtn);
+    modal.appendChild(contentBox);
+
+    // 6. 插入到 Body 并显示
+    document.body.appendChild(modal);
+}
+
+function renderOrderDetails(order) {
+    const container = document.createElement('div');
+    container.className = 'order-detail-container';
+
+    // --- Header Info (订单号, 时间) ---
+    container.appendChild(createEl('h3', null, `订单号: ${order.order_no}`));
+    container.appendChild(createEl('p', null, `创建时间: ${new Date(order.created_at).toLocaleString()}`));
+    container.appendChild(createEl('hr'));
+
+    // --- Items Table (商品列表) ---
+    const table = createEl('table', 'order-items-table');
+    
+    // Table Header
+    const thead = createEl('thead');
+    const headerRow = createEl('tr');
+    ['商品名称', '规格', '数量', '单价', '小计'].forEach(text => {
+        headerRow.appendChild(createEl('th', null, text));
+    });
+    thead.appendChild(headerRow);
+    table.appendChild(thead);
+
+    // Table Body
+    const tbody = createEl('tbody');
+    order.items.forEach(item => {
+        const row = createEl('tr');
+        const itemTotal = item.unit_price * item.quantity;
+        // 安全地显示规格，防止 XSS
+        const optionsText = item.options.length > 0 ? item.options.join(', ') : '—';
+        
+        row.appendChild(createEl('td', 'item-name', item.product_name));
+        row.appendChild(createEl('td', 'item-options', optionsText));
+        row.appendChild(createEl('td', 'item-quantity', `x${item.quantity}`));
+        row.appendChild(createEl('td', 'item-price', `¥ ${(item.unit_price / 100).toFixed(2)}`));
+        row.appendChild(createEl('td', 'item-total', `¥ ${(itemTotal / 100).toFixed(2)}`));
+        
+        tbody.appendChild(row);
+    });
+    table.appendChild(tbody);
+    container.appendChild(table);
+    
+    // --- Total Footer ---
+    const totalDiv = createEl('div', 'order-total-footer');
+    totalDiv.appendChild(createEl('strong', null, `总计金额: ¥ ${(order.total_amount / 100).toFixed(2)}`));
+    container.appendChild(totalDiv);
+
+    return container;
+}
+
+
 // --- 初始化与监听 ---
 
 async function init() {
@@ -438,6 +736,7 @@ async function init() {
     elements.productGrid.addEventListener('click', handleProductClick);
     elements.cartList.addEventListener('click', handleCartControls);
     elements.checkoutBtn.addEventListener('click', handleCheckout);
+    elements.showOrderHistoryBtn.addEventListener('click', handleShowOrderHistory);
     
     // 报表 Modal 监听
     elements.showReportBtn.addEventListener('click', () => { elements.reportModal.style.display = 'flex'; });

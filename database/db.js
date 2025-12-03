@@ -90,6 +90,27 @@ const getReportsStatement = db.prepare(`
     ORDER BY T1.created_at DESC, T1.order_no
 `);
 
+// --- 历史订单语句 (Prepared Statements) ---
+// 1. 获取总订单数
+const getTotalOrdersCount = db.prepare('SELECT COUNT(*) AS count FROM orders');
+
+// 2. 获取分页订单列表
+const getOrdersPaged = db.prepare(`
+    SELECT id, order_no, total_amount, created_at
+    FROM orders
+    ORDER BY created_at DESC
+    LIMIT ? OFFSET ?
+`);
+
+// 3. 获取订单主信息
+const getOrderMain = db.prepare('SELECT * FROM orders WHERE id = ?');
+
+// 4. 获取订单项明细
+const getOrderItems = db.prepare(
+    "SELECT product_name, options_used, quantity, unit_price FROM order_items WHERE order_id = ?"
+);
+
+
 /**
  * 生成一个简单的订单号 (YYYYMMDDHHMMSS + 随机数)
  */
@@ -155,4 +176,36 @@ module.exports = {
     getProducts: (catId) => getProductsByCat.all(catId),
     createOrder: createOrder,
     getReports: getReports,
+    // 1. 获取分页订单列表和总数
+    getPaginatedOrders: (limit, offset) => {
+        // 使用预编译语句获取总记录数
+        const totalResult = getTotalOrdersCount.get();
+        const totalCount = totalResult.count;
+
+        // 使用预编译语句获取当前页的订单数据
+        const data = getOrdersPaged.all(limit, offset);
+
+        return { data: data, totalCount: totalCount };
+    },
+
+    // 2. 获取单个订单的完整明细
+    getOrderDetails: (orderId) => {
+        // 1. 使用预编译语句获取订单主信息
+        const order = getOrderMain.get(orderId);
+
+        if (!order) {
+            return null;
+        }
+
+        // 2. 使用预编译语句获取订单项明细
+        const items = getOrderItems.all(orderId);
+
+        // 3. 转换 JSON 字符串到数组对象
+        order.items = items.map((item) => ({
+            ...item,
+            options: JSON.parse(item.options_used || "[]"),
+        }));
+
+        return order;
+    },
 };

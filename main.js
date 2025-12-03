@@ -18,41 +18,23 @@ function createWindows() {
   });
   adminWin.loadFile("src/admin/index.html");
 
-  // if (displays.length > 1) { // <-- 暂时注释掉这行
-
-  // 如果是双屏，使用外部显示器 (保留原逻辑，但现在是可选的)
-  const externalDisplay =
-    displays.find((display) => display.bounds.x !== 0) || displays[1];
-
-  let customerWinOptions = {};
-
+  // 2. 检测双屏：如果有第二个屏幕，创建客显窗口
   if (displays.length > 1) {
-    // 双屏环境：全屏显示在第二个屏幕
-    customerWinOptions = {
-      x: externalDisplay.bounds.x,
+    const externalDisplay =
+      displays.find((display) => display.bounds.x !== 0) || displays[1];
+
+    customerWin = new BrowserWindow({
+      x: externalDisplay.bounds.x, // 使用外部显示器的起始坐标
       y: externalDisplay.bounds.y,
       width: externalDisplay.bounds.width,
       height: externalDisplay.bounds.height,
       frame: false,
       fullscreen: true,
-    };
-  } else {
-    // 单屏环境：作为 Admin 窗口旁边的一个小窗口显示
-    customerWinOptions = {
-      width: 400, // 设定一个合适的小尺寸
-      height: 600,
-      x: 850, // 放在 Admin 窗口旁边 (假设 Admin 窗口宽度为 800)
-      y: 50,
-      frame: true, // 加上边框，方便拖动
-    };
-  }
+      webPreferences: { preload: path.join(__dirname, "preload.js") },
+    });
 
-  customerWin = new BrowserWindow({
-    ...customerWinOptions,
-    webPreferences: { preload: path.join(__dirname, "preload.js") },
-  });
-  customerWin.loadFile("src/customer/index.html");
-  // } // <-- 暂时注释掉这行
+    customerWin.loadFile("src/customer/index.html");
+  }
 }
 
 app.whenReady().then(() => {
@@ -113,7 +95,7 @@ app.whenReady().then(() => {
     }
   });
 
-  // 新增：导出流水报表 (NEW)
+  // 新增：导出流水报表
   ipcMain.handle("get-reports", async (event, { startDate, endDate }) => {
     try {
       // db.getReports 返回扁平化的交易记录
@@ -154,13 +136,41 @@ app.whenReady().then(() => {
     }
   );
 
+  // 分页获取订单列表
+  ipcMain.handle("get-paginated-orders", async (event, { limit, offset }) => {
+    try {
+      const result = db.getPaginatedOrders(limit, offset);
+      
+      return { success: true, data: result.data, totalCount: result.totalCount };
+    } catch (error) {
+      console.error("获取分页订单失败:", error);
+      return { success: false, error: error.message };
+    }
+  });
+
+  // 获取单个订单明细
+  ipcMain.handle("get-order-details", async (event, orderId) => {
+    try {
+      const order = db.getOrderDetails(orderId);
+      
+      if (!order) {
+        return { success: false, error: "订单未找到" };
+      }
+
+      return { success: true, data: order };
+    } catch (error) {
+      console.error(`获取订单 ${orderId} 明细失败:`, error);
+      return { success: false, error: error.message };
+    }
+  });
+
   ipcMain.handle("print-receipt", async (event, orderData) => {
     if (!orderData || !orderData.items || orderData.items.length === 0) {
-        return { success: false, error: '缺少有效的订单数据' };
+      return { success: false, error: "缺少有效的订单数据" };
     }
 
     let printWindow = new BrowserWindow({
-      show: true, // 关键：设置为隐藏窗口，用户不可见
+      show: false, // 关键：设置为隐藏窗口，用户不可见
       webPreferences: {
         // 确保打印窗口也能使用 preload 脚本
         preload: path.join(__dirname, "preload.js"),
@@ -172,31 +182,28 @@ app.whenReady().then(() => {
       height: 800,
     });
 
-    // 🚀 核心调试步骤 1：自动打开开发者工具，方便检查 DOM 和 Console
-    printWindow.webContents.openDevTools(); 
-
     // 1. 加载打印模板
     const receiptPath = path.join(__dirname, "src/receipt/receipt.html");
     await printWindow.loadFile(receiptPath);
 
     // 2. 将数据注入到打印窗口的 JS 环境中
-    console.log(orderData)
+    console.log(orderData);
     await printWindow.webContents.executeJavaScript(`
         window.renderReceipt(${JSON.stringify(orderData)});
     `);
 
-    // // 3. 执行静默打印
-    // const result = await printWindow.webContents.print({
-    //   silent: false, // 关键：不显示打印对话框，直接打印
-    //   printBackground: true, // 打印背景颜色/图片
-    //   deviceName: "", // 留空则使用默认打印机，或指定热敏打印机名称
-    // });
+    // 3. 执行静默打印
+    const result = await printWindow.webContents.print({
+      silent: true, // 关键：不显示打印对话框，直接打印
+      printBackground: true, // 打印背景颜色/图片
+      deviceName: "", // 留空则使用默认打印机，或指定热敏打印机名称
+    });
 
-    // // 4. 打印完成后关闭隐藏窗口
-    // printWindow.close();
-    // printWindow = null;
+    // 4. 打印完成后关闭隐藏窗口
+    printWindow.close();
+    printWindow = null;
 
-    return { success: true };
+    return { success: result };
   });
 
   // 其他 Electron 事件处理

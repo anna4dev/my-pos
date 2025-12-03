@@ -12,6 +12,12 @@ contextBridge.exposeInMainWorld('api', {
      */
     getProducts: (catId) => ipcRenderer.invoke('get-products', catId),
 
+    // 历史订单分页列表
+    getPaginatedOrders: (pagination) => ipcRenderer.invoke('get-paginated-orders', pagination),
+    
+    // 获取单个订单明细
+    getOrderDetails: (orderId) => ipcRenderer.invoke('get-order-details', orderId),
+
     /**
      * 获取订单流水报表
      * @param {string} startDate - ISO 格式的开始时间
