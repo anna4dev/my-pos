@@ -1,4 +1,5 @@
 const { app, BrowserWindow, screen, ipcMain, dialog } = require("electron");
+const bcrypt = require('bcryptjs');
 const path = require("path");
 const fs = require("fs");
 
@@ -140,8 +141,12 @@ app.whenReady().then(() => {
   ipcMain.handle("get-paginated-orders", async (event, { limit, offset }) => {
     try {
       const result = db.getPaginatedOrders(limit, offset);
-      
-      return { success: true, data: result.data, totalCount: result.totalCount };
+
+      return {
+        success: true,
+        data: result.data,
+        totalCount: result.totalCount,
+      };
     } catch (error) {
       console.error("获取分页订单失败:", error);
       return { success: false, error: error.message };
@@ -152,7 +157,7 @@ app.whenReady().then(() => {
   ipcMain.handle("get-order-details", async (event, orderId) => {
     try {
       const order = db.getOrderDetails(orderId);
-      
+
       if (!order) {
         return { success: false, error: "订单未找到" };
       }
@@ -204,6 +209,30 @@ app.whenReady().then(() => {
     printWindow = null;
 
     return { success: result };
+  });
+
+  // 用户认证
+  ipcMain.handle("authenticate", async (event, { username, password }) => {
+    try {
+        const user = db.getUserByUsername(username);
+
+        if (!user) {
+            return { success: false, error: "用户名或密码错误" };
+        }
+
+        // bcrypt.compare 是异步操作
+        const isMatch = await bcrypt.compare(password, user.password_hash);
+
+        if (isMatch) {
+            return { success: true };
+        } else {
+            // 密码不匹配
+            return { success: false, error: "用户名或密码错误" };
+        }
+    } catch (e) {
+        console.error("认证过程中发生系统错误:", e);
+        return { success: false, error: "系统认证错误，请联系管理员" };
+    }
   });
 
   // 其他 Electron 事件处理

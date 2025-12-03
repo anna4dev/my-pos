@@ -19,6 +19,7 @@
     "electron-rebuild": "^3.2.9"
   },
   "dependencies": {
+    "bcryptjs": "^3.0.3",
     "better-sqlite3": "^8.6.0",
     "csv-writer": "^1.6.0"
   }

@@ -45,6 +45,9 @@ contextBridge.exposeInMainWorld('api', {
     // 暴露保存文件的新接口
     saveCsvFile: (csvContent, defaultFilename) => ipcRenderer.invoke('save-csv-file', csvContent, defaultFilename),
 
+    // 认证接口
+    authenticate: (credentials) => ipcRenderer.invoke('authenticate', credentials),
+
     // 4. 监听 (ipcRenderer.on 仅用于接收主进程推送的消息，如客显同步)
     /**
      * 监听主进程推送的购物车同步消息 (用于客显端)

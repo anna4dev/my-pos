@@ -53,12 +53,20 @@ db.exec(`
         options_used TEXT,
         FOREIGN KEY(order_id) REFERENCES orders(id)
     );
+
+    -- 用户表
+    CREATE TABLE IF NOT EXISTS users (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        username TEXT NOT NULL UNIQUE,
+        password_hash TEXT NOT NULL
+    );
 `);
 
 
 // --- 预编译语句 (Prepared Statements) ---
 const getCategories = db.prepare('SELECT * FROM categories');
 const getProductsByCat = db.prepare('SELECT * FROM products WHERE category_id = ?');
+const getUserByUsernameStmt = db.prepare('SELECT id, username, password_hash FROM users WHERE username = ?');
 
 // 订单主表插入语句
 const insertOrder = db.prepare(`
@@ -174,6 +182,7 @@ function getReports(startDate, endDate) {
 module.exports = {
     getAllCategories: () => getCategories.all(),
     getProducts: (catId) => getProductsByCat.all(catId),
+    getUserByUsername: (username) => getUserByUsernameStmt.get(username),
     createOrder: createOrder,
     getReports: getReports,
     // 1. 获取分页订单列表和总数

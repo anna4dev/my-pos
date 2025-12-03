@@ -765,4 +765,53 @@ async function init() {
     }
 }
 
-document.addEventListener('DOMContentLoaded', init);
+function setupLogin() {
+    // 定义 DOM 元素
+    const loginOverlay = document.getElementById('login-overlay');
+    const appContainer = document.getElementById('app-container');
+    const loginBtn = document.getElementById('login-btn');
+    const usernameInput = document.getElementById('username');
+    const passwordInput = document.getElementById('password');
+    const errorMessageEl = document.getElementById('login-error-message');
+
+    // 绑定事件
+    loginBtn.addEventListener('click', handleLogin);
+    // 允许按回车键登录
+    passwordInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            handleLogin();
+        }
+    });
+
+    // 登录处理函数
+    async function handleLogin() {
+        const username = usernameInput.value;
+        const password = passwordInput.value;
+        errorMessageEl.textContent = '';
+        loginBtn.disabled = true;
+
+        if (!username || !password) {
+            errorMessageEl.textContent = '请输入用户名和密码。';
+            loginBtn.disabled = false;
+            return;
+        }
+
+        const result = await window.api.authenticate({ username, password });
+
+        if (result.success) {
+            // 登录成功：隐藏登录层，显示应用主内容
+            loginOverlay.style.display = 'none';
+            appContainer.style.display = 'flex';
+            
+            init(); 
+        } else {
+            errorMessageEl.textContent = result.error;
+            passwordInput.value = ''; // 清空密码输入框
+            loginBtn.disabled = false;
+        }
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    setupLogin(); 
+});

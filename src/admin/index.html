@@ -6,6 +6,21 @@
     <link rel="stylesheet" href="style.css" />
   </head>
   <body>
+    <div id="login-overlay">
+      <div class="login-container">
+        <h2>管理员登录</h2>
+        <div id="login-error-message" class="error-message"></div>
+
+        <label for="username">用户名:</label>
+        <input type="text" id="username" required />
+
+        <label for="password">密码:</label>
+        <input type="password" id="password" required />
+
+        <button id="login-btn">登录</button>
+      </div>
+    </div>
+
     <div id="app-container">
       <aside id="category-nav">
         <h3 class="header">菜单类别</h3>
