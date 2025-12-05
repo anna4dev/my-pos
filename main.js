@@ -1,7 +1,16 @@
 const { app, BrowserWindow, screen, ipcMain, dialog } = require("electron");
-const bcrypt = require('bcryptjs');
+const bcrypt = require("bcryptjs");
 const path = require("path");
 const fs = require("fs");
+
+// const logPath = "C:\\electron-debug.log";
+const log = (msg) => {
+  // if (process.platform === "darwin") {
+    console.log(msg);
+  // } else {
+  //   fs.appendFileSync(logPath, `[${new Date().toISOString()}] ${msg}\n`);
+  // }
+};
 
 let adminWin = null;
 let customerWin = null;
@@ -39,7 +48,7 @@ function createWindows() {
 }
 
 app.whenReady().then(() => {
-  console.log("Database User Data Path:", app.getPath("userData"));
+  log("Database User Data Path:", app.getPath("userData"));
   // CRITICAL: 数据库模块必须在 app 就绪后加载，以确保 app.getPath('userData') 可用
   const db = require("./database/db");
 
@@ -49,10 +58,10 @@ app.whenReady().then(() => {
 
   // 响应：获取初始化数据 (UNCHANGED)
   ipcMain.handle("get-initial-data", () => {
-    console.log("[MAIN] 收到获取初始化数据的请求.");
+    log("[MAIN] 收到获取初始化数据的请求.");
     try {
       const categories = db.getAllCategories();
-      console.log(`[MAIN] 数据库返回 ${categories.length} 个类别.`);
+      log(`[MAIN] 数据库返回 ${categories.length} 个类别.`);
       const cateId = categories && categories.length ? categories[0].id : 1;
       return {
         categories: categories,
@@ -128,7 +137,7 @@ app.whenReady().then(() => {
         // 写入文件，使用 utf-8 编码，确保中文不乱码
         fs.writeFileSync(filePath, csvContent, "utf-8");
 
-        console.log(`[MAIN] 报告成功保存到: ${filePath}`);
+        log(`[MAIN] 报告成功保存到: ${filePath}`);
         return { success: true, path: filePath };
       } catch (error) {
         console.error(`[MAIN] 文件写入失败: ${error}`);
@@ -169,69 +178,82 @@ app.whenReady().then(() => {
     }
   });
 
+  // print
   ipcMain.handle("print-receipt", async (event, orderData) => {
     if (!orderData || !orderData.items || orderData.items.length === 0) {
       return { success: false, error: "缺少有效的订单数据" };
     }
 
     let printWindow = new BrowserWindow({
-      show: false, // 关键：设置为隐藏窗口，用户不可见
+      show: false, // 隐藏窗口
+      width: 400,
+      height: 800,
       webPreferences: {
-        // 确保打印窗口也能使用 preload 脚本
         preload: path.join(__dirname, "preload.js"),
-        // 允许在打印窗口中执行 Node.js API (安全起见，通常不需要)
-        // nodeIntegration: false,
         contextIsolation: true,
       },
-      width: 400, // 热敏打印机宽度通常较小
-      height: 800,
     });
 
-    // 1. 加载打印模板
     const receiptPath = path.join(__dirname, "src/receipt/receipt.html");
     await printWindow.loadFile(receiptPath);
 
-    // 2. 将数据注入到打印窗口的 JS 环境中
-    console.log(orderData);
+    // 等待页面完全渲染
     await printWindow.webContents.executeJavaScript(`
-        window.renderReceipt(${JSON.stringify(orderData)});
-    `);
+    new Promise((resolve) => {
+      function tryRender() {
+        if (window.renderReceipt) {
+          resolve(true);
+        } else {
+          setTimeout(tryRender, 50);
+        }
+      }
+      tryRender();
+    });
+  `);
 
-    // 3. 执行静默打印
+    // 注入订单数据并触发渲染
+    await printWindow.webContents.executeJavaScript(`
+    window.renderReceipt(${JSON.stringify(orderData)});
+  `);
+
+    // 执行打印
+    const printerName = "GP-C80 Series"; // Win7 热敏打印机名称，可含空格
     const result = await printWindow.webContents.print({
-      silent: true, // 关键：不显示打印对话框，直接打印
-      printBackground: true, // 打印背景颜色/图片
-      deviceName: "", // 留空则使用默认打印机，或指定热敏打印机名称
+      silent: true,
+      printBackground: true,
+      deviceName: "",
     });
 
-    // 4. 打印完成后关闭隐藏窗口
-    printWindow.close();
-    printWindow = null;
+    // 关闭打印窗口
+    setTimeout(() => {
+      printWindow.close();
+      printWindow = null;
+    }, 5000);
 
-    return { success: result };
+    return { success: process.platform === "win32" ? result : true };
   });
 
   // 用户认证
   ipcMain.handle("authenticate", async (event, { username, password }) => {
     try {
-        const user = db.getUserByUsername(username);
+      const user = db.getUserByUsername(username);
 
-        if (!user) {
-            return { success: false, error: "用户名或密码错误" };
-        }
+      if (!user) {
+        return { success: false, error: "用户名或密码错误" };
+      }
 
-        // bcrypt.compare 是异步操作
-        const isMatch = await bcrypt.compare(password, user.password_hash);
+      // bcrypt.compare 是异步操作
+      const isMatch = await bcrypt.compare(password, user.password_hash);
 
-        if (isMatch) {
-            return { success: true };
-        } else {
-            // 密码不匹配
-            return { success: false, error: "用户名或密码错误" };
-        }
+      if (isMatch) {
+        return { success: true };
+      } else {
+        // 密码不匹配
+        return { success: false, error: "用户名或密码错误" };
+      }
     } catch (e) {
-        console.error("认证过程中发生系统错误:", e);
-        return { success: false, error: "系统认证错误，请联系管理员" };
+      console.error("认证过程中发生系统错误:", e);
+      return { success: false, error: "系统认证错误，请联系管理员" };
     }
   });
 

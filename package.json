@@ -9,7 +9,7 @@
     "start": "electron .",
     "dev": "npm run rebuild && npm start",
     "init-data": "npm rebuild && node init_data.js",
-    "pack": "electron-builder --win --x64"
+    "pack": "electron-builder --win --ia32"
   },
   "author": "anna4code",
   "license": "ISC",

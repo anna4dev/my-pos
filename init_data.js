@@ -2,8 +2,8 @@ const Database = require("better-sqlite3");
 const bcrypt = require("bcryptjs");
 const path = require("path");
 
-const DEFAULT_USERNAME = "admin";
-const DEFAULT_PASSWORD = "123456";
+const DEFAULT_USERNAME = "1";
+const DEFAULT_PASSWORD = "1";
 const SALT_ROUNDS = 10;
 
 // 1. 连接数据库 (如果没有文件会自动创建)
@@ -87,107 +87,113 @@ const getUserCount = db.prepare("SELECT COUNT(*) AS count FROM users");
 // --- 定义你的菜单 (数据结构不变) ---
 const menuData = [
   {
-    "category": "咖啡",
-    "items": [
-      { "name": "美式", "price": 2200, "options": ["热", "冷"] },
-      { "name": "咖啡拿铁", "price": 2800, "options": ["热", "冷"] },
-      { "name": "卡布奇诺", "price": 2800, "options": ["热", "冷"] },
-      { "name": "生椰咖啡拿铁", "price": 3000, "options": ["热", "冷"] },
-      { "name": "榛果拿铁", "price": 3000, "options": ["热", "冷"] },
-      { "name": "香草拿铁", "price": 3000, "options": ["热", "冷"] },
-      { "name": "焦糖玛奇朵", "price": 3200, "options": ["热", "冷"] },
-      { "name": "咖啡摩卡", "price": 3200, "options": ["热", "冷"] },
-      { "name": "阿芙佳朵", "price": 3800, "options": [] },
-      { "name": "红吸管咖啡", "price": 3600, "options": [] },
-      { "name": "生姜咖啡", "price": 2800, "options": ["热", "冷"] },
-      { "name": "生姜咖啡拿铁", "price": 3000, "options": ["热", "冷"] },
-      { "name": "手冲咖啡", "price": 3600, "options": ["热", "冷"] },
-      { "name": "黄油拿铁", "price": 3200, "options": ["热", "冷"] },
-      { "name": "巴旦木拿铁", "price": 3000, "options": ["热", "冷"] },
-      { "name": "豆浆拿铁", "price": 3000, "options": ["热", "冷"] },
-    ]
+    category: "咖啡",
+    items: [
+      { name: "美式", price: 2200, options: ["热", "冷"] },
+      { name: "咖啡拿铁", price: 2800, options: ["热", "冷"] },
+      { name: "卡布奇诺", price: 2800, options: ["热", "冷"] },
+      { name: "生椰咖啡拿铁", price: 3000, options: ["热", "冷"] },
+      { name: "榛果拿铁", price: 3000, options: ["热", "冷"] },
+      { name: "香草拿铁", price: 3000, options: ["热", "冷"] },
+      { name: "焦糖玛奇朵", price: 3200, options: ["热", "冷"] },
+      { name: "咖啡摩卡", price: 3200, options: ["热", "冷"] },
+      { name: "阿芙佳朵", price: 3800, options: [] },
+      { name: "红吸管咖啡", price: 3600, options: [] },
+      { name: "生姜咖啡", price: 2800, options: ["热", "冷"] },
+      { name: "生姜咖啡拿铁", price: 3000, options: ["热", "冷"] },
+      { name: "手冲咖啡", price: 3600, options: ["热", "冷"] },
+      { name: "黄油拿铁", price: 3200, options: ["热", "冷"] },
+      { name: "巴旦木拿铁", price: 3000, options: ["热", "冷"] },
+      { name: "豆浆拿铁", price: 3000, options: ["热", "冷"] },
+    ],
   },
   {
-    "category": "牛奶 (不含咖啡)",
-    "items": [
-      { "name": "可可拿铁", "price": 2800, "options": ["热", "冷"] },
-      { "name": "提拉米苏拿铁", "price": 2800, "options": ["热", "冷"] },
-      { "name": "抹茶拿铁", "price": 2800, "options": ["热", "冷"] },
-      { "name": "椰子坚果拿铁", "price": 2800, "options": ["热", "冷"] },
-      { "name": "红茶拿铁", "price": 2800, "options": ["热", "冷"] },
-      { "name": "生姜拿铁", "price": 2800, "options": ["热", "冷"] },
-      { "name": "黑谷拿铁", "price": 2800, "options": ["热", "冷"] }
-    ]
+    category: "牛奶 (不含咖啡)",
+    items: [
+      { name: "可可拿铁", price: 2800, options: ["热", "冷"] },
+      { name: "提拉米苏拿铁", price: 2800, options: ["热", "冷"] },
+      { name: "抹茶拿铁", price: 2800, options: ["热", "冷"] },
+      { name: "椰子坚果拿铁", price: 2800, options: ["热", "冷"] },
+      { name: "红茶拿铁", price: 2800, options: ["热", "冷"] },
+      { name: "生姜拿铁", price: 2800, options: ["热", "冷"] },
+      { name: "黑谷拿铁", price: 2800, options: ["热", "冷"] },
+    ],
   },
   {
-    "category": "茶",
-    "items": [
-      { "name": "奶茶", "price": 2000, "options": ["杯"] },
-      { "name": "红茶", "price": 2000, "options": ["杯"] },
-      { "name": "绿茶", "price": 2000, "options": ["杯"] },
-      { "name": "普洱茶", "price": 2000, "options": ["杯"] },
-      { "name": "洋甘菊", "price": 2000, "options": ["杯"] },
-      { "name": "昆仑菊花", "price": 6000, "options": ["壶"] },
-      { "name": "青柑普洱", "price": 6000, "options": ["壶"] },
-      { "name": "洋甘菊", "price": 6000, "options": ["壶"] },
-    ]
+    category: "茶",
+    items: [
+      { name: "奶茶", price: 2000, options: ["杯"] },
+      { name: "红茶", price: 2000, options: ["杯"] },
+      { name: "绿茶", price: 2000, options: ["杯"] },
+      { name: "普洱茶", price: 2000, options: ["杯"] },
+      { name: "洋甘菊", price: 2000, options: ["杯"] },
+      { name: "昆仑菊花3人", price: 6000, options: [""] },
+      { name: "青柑普洱3人", price: 6000, options: [] },
+      { name: "洋甘菊3人", price: 6000, options: [] },
+      { name: "昆仑菊花4人", price: 8000, options: [] },
+      { name: "青柑普洱4人", price: 8000, options: [] },
+      { name: "洋甘菊4人", price: 8000, options: [] },
+    ],
   },
   {
-    "category": "饮料",
-    "items": [
-      { "name": "柠檬", "price": 2000, "options": ["热", "冷"] },
-      { "name": "柚子", "price": 2000, "options": ["热", "冷"] },
-      { "name": "生姜", "price": 2000, "options": ["热", "冷"] },
-      { "name": "红茶", "price": 2000, "options": ["热", "冷"] },
-      { "name": "橘子", "price": 2000, "options": ["热", "冷"] }
-    ]
+    category: "饮料",
+    items: [
+      { name: "柠檬", price: 2000, options: ["热", "冷"] },
+      { name: "柚子", price: 2000, options: ["热", "冷"] },
+      { name: "梅子", price: 2000, options: ["热", "冷"] },
+      { name: "薏米", price: 2000, options: ["热", "冷"] },
+      { name: "红参", price: 2000, options: ["热", "冷"] },
+      { name: "生姜", price: 2000, options: ["热", "冷"] },
+    ],
   },
   {
-    "category": "汽水",
-    "items": [
-      { "name": "美式咖啡", "price": 2800, "options": [] },
-      { "name": "柠檬/蓝莓", "price": 2800, "options": [] },
-      { "name": "柚子/梅子", "price": 2800, "options": [] }
-    ]
+    category: "汽水",
+    items: [
+      { name: "美式咖啡", price: 2800, options: [] },
+      { name: "柠檬", price: 2800, options: [] },
+      { name: "蓝柠檬", price: 2800, options: [] },
+      { name: "柚子", price: 2800, options: [] },
+      { name: "梅子", price: 2800, options: [] },
+    ],
   },
   {
-    "category": "果汁",
-    "items": [
-      { "name": "香蕉", "price": 2000, "options": [] },
-      { "name": "草莓", "price": 3200, "options": [] },
-      { "name": "芒果", "price": 3200, "options": [] },
-      { "name": "苹果+胡萝卜 (鲜榨)", "price": 3200, "options": [] },
-      { "name": "橙汁 (鲜榨)", "price": 3200, "options": [] }
-    ]
+    category: "果汁",
+    items: [
+      { name: "香蕉", price: 2000, options: [] },
+      { name: "草莓", price: 3200, options: [] },
+      { name: "芒果", price: 3200, options: [] },
+      { name: "苹果+胡萝卜 (鲜榨)", price: 3200, options: [] },
+      { name: "橙汁 (鲜榨)", price: 3200, options: [] },
+    ],
   },
   {
-    "category": "甜点",
-    "items": [
-      { "name": "小松糕", "price": 1200, "options": [] },
-      { "name": "巧克力/椰子", "price": 1000, "options": [] },
-      { "name": "巧克力曲奇 (包/两个)", "price": 1000, "options": [] },
-      { "name": "核桃派", "price": 1200, "options": [] },
-      { "name": "芝士蛋糕 (一块)", "price": 3000, "options": [] },
-      { "name": "巧克力 (一块)", "price": 2500, "options": [] },
-      { "name": "提拉米苏", "price": 3200, "options": [] }
-    ]
+    category: "甜点",
+    items: [
+      { name: "小松糕", price: 1200, options: ["巧克力", "椰子"] },
+      { name: "巧克力曲奇 (包/两个)", price: 1000, options: [] },
+      { name: "核桃派", price: 1200, options: [] },
+      { name: "芝士蛋糕 (一块)", price: 3000, options: [] },
+      { name: "巧克力 (一块)", price: 2500, options: [] },
+      { name: "提拉米苏", price: 3200, options: [] },
+    ],
   },
   {
-    "category": "主食",
-    "items": [
-      { "name": "上引三明治", "price": 3000, "options": [] },
-      { "name": "上引披萨", "price": 4200, "options": [] },
-      { "name": "肉酱意面", "price": 3900, "options": [] },
-      { "name": "三角紫菜包饭 (饭团)", "price": 1200, "options": ["泡菜", "牛肉"] },
-      { "name": "石锅拌饭 (含牛肉)", "price": 3300, "options": [] },
-      { "name": "泡菜培根炒饭", "price": 3000, "options": [] },
-      { "name": "炒年糕", "price": 3000, "options": [] },
-      { "name": "韩式炒牛肉 (小)", "price": 3800, "options": [] },
-      { "name": "韩式炒牛肉 (大)", "price": 5200, "options": [] },
-      { "name": "韩式辣炒猪肉 (小)", "price": 3000, "options": [] },
-      { "name": "韩式辣炒猪肉 (大)", "price": 4000, "options": [] }
-    ]
-  }
+    category: "主食",
+    items: [
+      { name: "上引三明治", price: 3000, options: [] },
+      { name: "上引披萨", price: 4200, options: [] },
+      { name: "肉酱意面", price: 3900, options: [] },
+      { name: "三角紫菜包饭 (饭团)泡菜", price: 1200, options: [] },
+      { name: "三角紫菜包饭 (饭团)牛肉", price: 1400, options: [] },
+      { name: "石锅拌饭 (含牛肉)", price: 3300, options: [] },
+      { name: "泡菜培根炒饭", price: 3000, options: [] },
+      { name: "炒年糕", price: 3000, options: [] },
+      { name: "韩式炒牛肉 (小)", price: 3800, options: [] },
+      { name: "韩式炒牛肉 (大)", price: 5200, options: [] },
+      { name: "韩式辣炒猪肉 (小)", price: 3000, options: [] },
+      { name: "韩式辣炒猪肉 (大)", price: 4000, options: [] },
+    ],
+  },
 ];
 
 async function initializeData() {
