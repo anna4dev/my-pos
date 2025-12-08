@@ -21,7 +21,7 @@ body {
 
 /* 类别导航 (左侧) */
 #category-nav {
-  width: 200px;
+  width: 160px;
   background-color: #ffffff;
   box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
   display: flex;
@@ -213,7 +213,8 @@ body {
 
 #checkout-btn,
 #show-orders-btn,
-#show-report-btn {
+#show-report-btn,
+#show-management-btn {
   padding: 10px;
   background-color: #e91e63;
   color: white;
@@ -229,7 +230,8 @@ body {
 }
 
 #show-report-btn,
-#show-orders-btn {
+#show-orders-btn,
+#show-management-btn {
   background-color: #c5cae9;
   color: #3f51b5;
   margin: 10px;
@@ -292,7 +294,8 @@ body {
 }
 
 /* 订单列表视图的头部 */
-#order-list-view {
+#order-list-view,
+#management-view {
   padding: 20px;
 }
 
@@ -484,4 +487,208 @@ body {
   height: 20px;
   margin-bottom: 10px;
   font-size: 0.9em;
+}
+
+/* -------------------------------------- */
+/* 商品和分类管理视图样式 (#product-management-view) */
+/* -------------------------------------- */
+
+/* 主容器 */
+#product-management-view {
+  padding: 20px;
+  background-color: #f4f7f6;
+  overflow-y: auto; /* 允许整个管理页面滚动 */
+}
+
+/* 区域头部 (Header for Categories and Products) */
+.management-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+  padding-bottom: 5px;
+  border-bottom: 2px solid #ddd;
+}
+
+.management-header h3 {
+  margin: 0;
+  color: #333;
+  font-weight: 600;
+}
+
+/* 按钮样式 (统一) */
+.management-header button {
+  padding: 8px 15px;
+  background-color: #3f51b5; /* 主要操作色 */
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 0.95em;
+  transition: background-color 0.2s;
+}
+
+.management-header button:hover {
+  background-color: #303f9f;
+}
+
+/* -------------------------------------- */
+/* 1. 分类列表样式 */
+/* -------------------------------------- */
+
+.category-management-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 30px;
+}
+
+.category-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: white;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  padding: 10px 15px;
+  width: 270px; /* 确保最小宽度 */
+}
+
+.category-name {
+  font-weight: bold;
+  color: #555;
+  flex-grow: 1;
+}
+
+/* -------------------------------------- */
+/* 2. 商品表格样式 */
+/* -------------------------------------- */
+
+.product-management-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+  background: white;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.product-management-table th,
+.product-management-table td {
+  padding: 12px;
+  border: 1px solid #eee;
+  text-align: left;
+}
+
+.product-management-table th {
+  background-color: #eef; /* 浅蓝色表头 */
+  font-weight: 600;
+  color: #3f51b5;
+}
+
+.product-management-table tr:nth-child(even) {
+  background-color: #f9f9f9; /* 斑马条纹 */
+}
+
+/* 特定列宽度调整 */
+.product-management-table td:nth-child(1) {
+  width: 5%;
+} /* ID */
+.product-management-table td:nth-child(2) {
+  width: 15%;
+} /* Category */
+.product-management-table td:nth-child(6) {
+  width: 15%;
+} /* 操作 */
+
+/* 危险操作按钮 (通用) */
+.danger-btn,
+.category-actions .danger-btn {
+  background-color: #f44336; /* 红色 */
+  color: white;
+  border: none;
+  padding: 5px 10px;
+  border-radius: 4px;
+  font-size: 0.85em;
+  cursor: pointer;
+}
+
+.category-actions .edit-category-btn.danger-btn,
+.product-management-table .edit-product-btn {
+  margin-right: 10px;
+  background-color: #3f51b5;
+}
+
+/* -------------------------------------- */
+/* CRUD 模态框样式 */
+/* -------------------------------------- */
+
+.crud-modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 2000;
+}
+
+.crud-modal-content {
+  background-color: white;
+  padding: 30px;
+  border-radius: 8px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.4);
+  width: 90%;
+  max-width: 450px;
+}
+
+.crud-modal-content h3 {
+  margin-top: 0;
+  margin-bottom: 20px;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 10px;
+}
+
+.crud-modal-content label {
+  display: block;
+  margin-top: 10px;
+  margin-bottom: 5px;
+  font-weight: bold;
+}
+
+.crud-modal-content input,
+.crud-modal-content select {
+  width: 100%;
+  padding: 10px;
+  margin-bottom: 15px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  box-sizing: border-box;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.primary-btn {
+  background-color: #4caf50;
+  color: white;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.secondary-btn {
+  background-color: #f0f0f0;
+  color: #333;
+  padding: 10px 20px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  cursor: pointer;
 }

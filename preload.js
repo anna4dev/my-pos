@@ -64,4 +64,17 @@ contextBridge.exposeInMainWorld("api", {
     // 注册新的监听器
     ipcRenderer.on("sync-cart", (event, value) => callback(value));
   },
+
+  // 商品管理
+  getAllProductsAndCategories: () => ipcRenderer.invoke("list-products"),
+  getProductById: (id) => ipcRenderer.invoke("get-product", id),
+  insertProduct: (pData) => ipcRenderer.invoke("add-product", pData),
+  updateProduct: (pData) => ipcRenderer.invoke("edit-product", pData),
+  deleteProduct: (id) => ipcRenderer.invoke("del-product", id),
+
+  // 分类管理
+  getAllCategories: () => ipcRenderer.invoke("list-categories"),
+  insertCategory: (cData) => ipcRenderer.invoke("add-category", cData),
+  updateCategory: (cData) => ipcRenderer.invoke("edit-category", cData),
+  deleteCategory: (id) => ipcRenderer.invoke("del-category", id),
 });

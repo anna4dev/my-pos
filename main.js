@@ -64,13 +64,14 @@ app.whenReady().then(() => {
       log(`[MAIN] 数据库返回 ${categories.length} 个类别.`);
       const cateId = categories && categories.length ? categories[0].id : 1;
       return {
+        success: true,
         categories: categories,
         products: db.getProducts(cateId),
       };
     } catch (e) {
       console.error("[MAIN] 数据库查询失败:", e);
       // 返回一个空数组，避免应用崩溃
-      return { categories: [], products: [] };
+      return { success: false, error: e, categories: [], products: [] };
     }
   });
 
@@ -255,6 +256,54 @@ app.whenReady().then(() => {
       console.error("认证过程中发生系统错误:", e);
       return { success: false, error: "系统认证错误，请联系管理员" };
     }
+  });
+
+  // 分类管理
+  ipcMain.handle("list-categories", (event, ) => {
+    try {
+      const result = db.getAllCategories();
+      return {success: !!result, data: result}
+    } catch (error) {
+      console.error(`获取分类失败:`, error);
+      return { success: false, error: error.message };
+    } 
+  });
+  ipcMain.handle("add-category", (event, pData) => {
+    return db.addCategory(pData);
+  });
+
+  ipcMain.handle("edit-category", (event, pData) => {
+    return db.updateCategory(pData);
+  });
+
+  ipcMain.handle("del-category", (event, id) => {
+    try {
+      return db.delCategory(id);
+    } catch (error) {
+      // 捕获系统级错误或 db.js 未处理的异常
+      console.error(`删除分类 ${id} 失败:`, error);
+      return { success: false, error: error.message };
+    }
+  });
+
+  // 商品管理
+  ipcMain.handle("list-products", (event, ) => {
+    return db.getAllProductsAndCategories();
+  });
+  
+  ipcMain.handle("get-product", (event, id) => {
+    return db.getProductById(id);
+  });
+  ipcMain.handle("add-product", (event, pData) => {
+    return db.addProduct(pData);
+  });
+
+  ipcMain.handle("edit-product", (event, pData) => {
+    return db.updateProduct(pData);
+  });
+
+  ipcMain.handle("del-product", (event, id) => {
+    return db.delProduct(id);
   });
 
   // 其他 Electron 事件处理

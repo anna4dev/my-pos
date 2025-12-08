@@ -26,6 +26,8 @@ const elements = {
     showOrderHistoryBtn: document.getElementById('show-orders-btn'),
     orderListView: document.getElementById('order-list-view'),
     mainDiv: document.getElementById('app-container'),
+    showManagementBtn: document.getElementById('show-management-btn'),
+    managementView: document.getElementById('management-view'),
 };
 
 function createEl(tag, className, textContent) {
@@ -53,8 +55,6 @@ function renderCategories() {
 
 
 function renderProducts() {
-        console.log('test 123', state.products)
-
     elements.productGrid.innerHTML = '';
 
     state.products.forEach(prod => {
@@ -92,7 +92,6 @@ function renderProducts() {
                 btn.dataset.action = 'add-item-with-option';
                 btn.dataset.option = choice; // 存储选项值
                 
-                // ⚠️ 关键：直接将点击事件绑定到按钮上
                 btn.addEventListener('click', handleOptionButton); 
 
                 optionDiv.appendChild(btn);
@@ -115,7 +114,7 @@ function renderCart() {
         total += itemTotal;
         
         const li = document.createElement('li');
-        li.className = 'cart-item'; // ⚠️ CSS 需要调整，让 li 内部元素垂直堆叠
+        li.className = 'cart-item'; 
         li.dataset.index = index;
         
         const optionsText = item.options && item.options.length > 0 
@@ -214,7 +213,6 @@ async function handleCategoryClick(event) {
 }
 
 function handleOptionButton(event) {
-    // ⚠️ 阻止事件继续传播，防止触发父级 card 的 handleProductClick
     event.stopPropagation(); 
     
     const btn = event.currentTarget; // 被点击的按钮
@@ -444,6 +442,7 @@ async function handleExportCsv() {
 
 function showOrderListView() {
     elements.mainDiv.style.display = 'none';
+    elements.managementView.style.display = 'none';
     elements.orderListView.style.display = 'block';
     // 确保报告模式关闭
     elements.reportModal.style.display = 'none'; 
@@ -452,6 +451,8 @@ function showOrderListView() {
 function showProductGridView() {
     elements.mainDiv.style.display = 'flex';
     elements.orderListView.style.display = 'none';
+    elements.managementView.style.display = 'none';
+
 }
 
 // ----------------------------------------------------
@@ -634,7 +635,6 @@ function renderOrderList(orders) {
     });
 }
 
-// ⚠️ 占位符：需要实现订单明细的弹窗
 async function showOrderDetailModal(orderId) {
     // 2. 异步获取数据
     const result = await window.api.getOrderDetails(orderId);
@@ -727,6 +727,494 @@ function renderOrderDetails(order) {
     return container;
 }
 
+function showProductManagementView() {
+    // 隐藏其他视图
+    elements.mainDiv.style.display = 'none';
+    elements.orderListView.style.display = 'none'; 
+    // 显示商品管理视图
+    elements.managementView.style.display = 'block';
+}
+
+// ----------------------------------------------------
+// 商品管理处理函数
+// ----------------------------------------------------
+function handleShowProductManagement() {
+    showProductManagementView();
+    renderProductManagementInterface(); 
+}
+
+// 假设您有一个 IPC 接口来获取所有分类和商品数据
+async function renderProductManagementInterface() {
+    elements.managementView.innerHTML = '<h2>商品和分类管理</h2><p>加载中...</p>';
+    
+    // 1. 获取所有分类和商品数据 (需要在 db.js 中新增一个 getAllProductsAndCategories 方法)
+    // 假设 window.api.getAllProductsAndCategories() 返回 { categories: [...], products: [...] }
+    const result = await window.api.getAllProductsAndCategories(); 
+
+    if (!result.success) {
+        elements.managementView.innerHTML = `<p class="error-message">加载数据失败: ${result.error}</p>`;
+        return;
+    }
+    
+    const { categories, products } = result.data;
+    
+    let html = `
+        <div class="management-header">
+            <button id="back-to-products-btn" class="control-btn">← 返回商品列表</button>
+            <h3>分类管理 (${categories.length} 个)</h3>
+            <button id="add-category-btn">✚ 新增分类</button>
+        </div>
+        <div id="category-list-management" class="category-management-list">
+            ${categories.map(c => `
+                <div class="category-item" data-id="${c.id}">
+                    <span class="category-name">${c.name}</span>
+                    <div class="category-actions">
+                        <button class="edit-category-btn danger-btn" data-id="${c.id}" data-name="${c.name}">编辑</button>
+                        <button class="delete-category-btn danger-btn" data-id="${c.id}">删除</button>
+                    </div>
+                </div>
+            `).join('')}
+        </div>
+        
+        <div class="management-header" style="margin-top: 30px;">
+            <h3>商品管理 (${products.length} 个)</h3>
+            <button id="add-product-btn">✚ 新增商品</button>
+        </div>
+        <div id="product-list-management">
+            ${renderProductTable(products, categories)}
+        </div>
+    `;
+
+    elements.managementView.innerHTML = html;
+    
+    // 2. 绑定事件
+    // 分类事件
+    elements.managementView.querySelectorAll('.delete-category-btn').forEach(btn => {
+        btn.addEventListener('click', handleCategoryDelete);
+    });
+    elements.managementView.querySelector('#back-to-products-btn').addEventListener('click', showProductGridView);
+}
+
+function renderProductTable(products, categories) {
+    return '<p>商品列表表格占位...</p>';
+}
+
+async function handleCategoryDelete(e) {
+    const categoryId = parseInt(e.target.dataset.id);
+    const categoryName = e.target.closest('.category-item').querySelector('.category-name').textContent;
+
+    // 提示信息应包含将要删除的内容，警告用户会丢失商品。
+    const confirmationMessage = 
+        `确认删除分类 "${categoryName}" 吗？\n\n` + 
+        `此操作将永久删除此分类及该分类下的所有商品，数据无法恢复！`;
+
+    if (!confirm(confirmationMessage)) {
+        // 用户点击了“取消”
+        console.log(`用户取消了删除分类 ID: ${categoryId} 的操作。`);
+        return; 
+    }
+
+    // 1. 调用 IPC 接口执行删除操作
+    const result = await window.api.deleteCategory(categoryId);
+
+    if (result.success) {
+        const count = result.deletedProductsCount;
+        let message = `分类 "${categoryName}" 删除成功！`;
+        
+        // 2. 显示删除结果的反馈（这里继续使用 alert，仅用于反馈结果）
+        if (count > 0) {
+            message += `\n已同时删除了 ${count} 个关联商品。`;
+        } else {
+            message += `\n该分类下没有关联商品被删除。`;
+        }
+        
+        alert(message);
+        
+        // 3. 刷新界面
+        renderProductManagementInterface(); 
+
+    } else {
+        alert(`删除分类失败: ${result.error}`);
+    }
+}
+
+async function renderProductManagementInterface() {
+    elements.managementView.innerHTML = '<button id="back-to-products-btn" class="control-btn">← 返回商品列表</button><h2>商品和分类管理</h2><p>加载中...</p>';
+    
+    const result = await window.api.getAllProductsAndCategories(); 
+
+    if (!result.success) {
+        elements.managementView.innerHTML = `<p class="error-message">加载数据失败: ${result.error}</p>`;
+        return;
+    }
+    
+    const { categories, products } = result.data;
+    
+    // 1. 渲染分类管理区域
+    const categoryArea = renderCategoryManagementList(categories);
+    
+    // 2. 渲染商品管理区域
+    const productArea = renderProductManagementTable(products, categories);
+    
+    // 清空并组装视图
+    elements.managementView.innerHTML = '<button id="back-to-products-btn" class="control-btn">← 返回商品列表</button><h2>商品和分类管理</h2>';
+    elements.managementView.appendChild(categoryArea);
+    elements.managementView.appendChild(productArea);
+
+    // 3. 绑定事件 (分类和商品的所有 CRUD 操作)
+    bindManagementEvents();
+}
+
+function renderCategoryManagementList(categories) {
+    const container = createEl('div', 'management-section');
+    
+    // 标题和新增按钮
+    const header = createEl('div', 'management-header');
+    header.appendChild(createEl('h3', null, `分类管理 (${categories.length} 个)`));
+    const addBtn = createEl('button', null, '✚ 新增分类');
+    addBtn.id = 'add-category-btn';
+    header.appendChild(addBtn);
+    container.appendChild(header);
+
+    // 分类列表
+    const listDiv = createEl('div', 'category-management-list');
+    
+    categories.forEach(c => {
+        const item = createEl('div', 'category-item');
+        item.dataset.id = c.id;
+
+        const nameSpan = createEl('span', 'category-name', c.name); 
+        item.appendChild(nameSpan);
+        
+        const actions = createEl('div', 'category-actions');
+        
+        const editBtn = createEl('button', 'edit-category-btn danger-btn', '编辑');
+        editBtn.dataset.id = c.id;
+        editBtn.dataset.name = c.name;
+        
+        const deleteBtn = createEl('button', 'delete-category-btn danger-btn', '删除');
+        deleteBtn.dataset.id = c.id;
+        
+        actions.appendChild(editBtn);
+        actions.appendChild(deleteBtn);
+        item.appendChild(actions);
+        listDiv.appendChild(item);
+    });
+
+    container.appendChild(listDiv);
+    return container;
+}
+
+function renderProductManagementTable(products, categories) {
+    const container = createEl('div', 'management-section');
+    
+    // 标题和新增按钮
+    const header = createEl('div', 'management-header');
+    header.appendChild(createEl('h3', null, `商品管理 (${products.length} 个)`));
+    const addBtn = createEl('button', null, '✚ 新增商品');
+    addBtn.id = 'add-product-btn';
+    header.appendChild(addBtn);
+    container.appendChild(header);
+
+    // 表格主体
+    const table = createEl('table', 'product-management-table');
+    const thead = createEl('thead');
+    const tbody = createEl('tbody');
+
+    // 表头
+    const headers = ['ID', '分类', '商品名', '价格 (元)', '规格', '操作'];
+    const headerRow = createEl('tr');
+    headers.forEach(text => headerRow.appendChild(createEl('th', null, text)));
+    thead.appendChild(headerRow);
+    table.appendChild(thead);
+    
+    // 表格内容
+    products.forEach(p => {
+        const row = createEl('tr');
+        row.dataset.id = p.id;
+        
+        const category = categories.find(c => c.id === p.category_id);
+        const categoryName = category ? category.name : '未分类';
+        const priceDisplay = (p.price / 100).toFixed(2);
+        
+        // 尝试解析规格，并安全显示
+        let optionsText = '';
+        try {
+            const options = JSON.parse(p.options || '[]');
+            optionsText = options.length > 0 ? options.join(', ') : '—';
+        } catch (e) {
+            optionsText = '格式错误';
+        }
+        
+        row.appendChild(createEl('td', null, p.id));
+        row.appendChild(createEl('td', null, categoryName));
+        row.appendChild(createEl('td', null, p.name));
+        row.appendChild(createEl('td', null, priceDisplay));
+        row.appendChild(createEl('td', 'product-options-cell', optionsText));
+        
+        // 操作单元格
+        const actionsCell = createEl('td', 'action-cell');
+        const editBtn = createEl('button', 'edit-product-btn danger-btn', '编辑');
+        editBtn.dataset.id = p.id;
+        const deleteBtn = createEl('button', 'delete-product-btn danger-btn', '删除');
+        deleteBtn.dataset.id = p.id;
+        
+        actionsCell.appendChild(editBtn);
+        actionsCell.appendChild(deleteBtn);
+        row.appendChild(actionsCell);
+        
+        tbody.appendChild(row);
+    });
+    
+    table.appendChild(tbody);
+    container.appendChild(table);
+    return container;
+}
+
+/**
+ *  模态框辅助函数：显示分类编辑/新增表单
+ * @param {object | null} category - 待编辑的分类对象，null 表示新增
+ */
+function showCategoryModal(category = null) {
+    const isEdit = !!category;
+    const title = isEdit ? `编辑分类: ${category.name}` : '新增分类';
+    
+    // 1. 创建模态框容器
+    const modal = createEl('div', 'crud-modal-backdrop');
+    const content = createEl('div', 'crud-modal-content');
+    content.innerHTML = `
+        <h3>${title}</h3>
+        <p class="error-message" id="category-modal-error"></p>
+        <label for="category-name-input">分类名称:</label>
+        <input type="text" id="category-name-input" value="${isEdit ? category.name : ''}" required>
+        <div class="modal-actions">
+            <button id="modal-submit-btn" class="primary-btn">${isEdit ? '保存更改' : '新增'}</button>
+            <button id="modal-cancel-btn" class="secondary-btn">取消</button>
+        </div>
+    `;
+    modal.appendChild(content);
+    document.body.appendChild(modal);
+
+    // 2. 绑定事件
+    const submitBtn = content.querySelector('#modal-submit-btn');
+    const cancelBtn = content.querySelector('#modal-cancel-btn');
+    
+    const inputEl = content.querySelector('#category-name-input');
+    const errorEl = content.querySelector('#category-modal-error');
+
+    cancelBtn.onclick = () => document.body.removeChild(modal);
+    
+    // 3. 提交处理 (调用 IPC)
+    submitBtn.onclick = async () => {
+        const newName = inputEl.value.trim();
+        if (!newName) {
+            errorEl.textContent = '分类名称不能为空。';
+            return;
+        }
+
+        let result;
+        const data = { id: isEdit ? category.id : null, name: newName };
+
+        // 调用对应的 IPC 接口
+        if (isEdit) {
+            result = await window.api.updateCategory(data);
+        } else {
+            result = await window.api.insertCategory(data);
+        }
+
+        if (result.success) {
+            alert(`分类${isEdit ? '更新' : '新增'}成功！`);
+            document.body.removeChild(modal);
+            renderProductManagementInterface(); // 刷新列表
+        } else {
+            errorEl.textContent = `操作失败: ${result.error || '未知错误'}`;
+        }
+    };
+}
+
+
+/**
+ *  模态框辅助函数：显示商品编辑/新增表单 (简化版)
+ *  完整的实现需要获取所有分类供选择，并处理 options 数组
+ * @param {object | null} product - 待编辑的商品对象，null 表示新增
+ */
+async function showProductModal(product = null) {
+    // 完整的实现需要从数据库获取分类列表
+    const categoriesResult = await window.api.getAllCategories(); 
+    console.log(categoriesResult)
+    if (!categoriesResult.success) {
+        alert('无法加载分类列表，请稍后再试。');
+        return;
+    }
+    const categories = categoriesResult.data;
+    
+    const isEdit = !!product;
+    const title = isEdit ? `编辑商品: ${product.name}` : '新增商品';
+    
+    // 假设 product.options 是 JSON 字符串，我们需要解析它
+    let optionsString = '';
+    if (isEdit) {
+        try {
+            const optionsArray = JSON.parse(product.options || '[]');
+            optionsString = optionsArray.join(', ');
+        } catch(e) { /* ignore */ }
+    }
+
+    // 简化 HTML 结构
+    const modal = createEl('div', 'crud-modal-backdrop');
+    const content = createEl('div', 'crud-modal-content product-modal');
+    content.innerHTML = `
+        <h3>${title}</h3>
+        <p class="error-message" id="product-modal-error"></p>
+
+        <label for="product-category">所属分类:</label>
+        <select id="product-category-input" required>
+            ${categories.map(cat => 
+                `<option value="${cat.id}" ${isEdit && product.category_id === cat.id ? 'selected' : ''}>${cat.name}</option>`
+            ).join('')}
+        </select>
+        
+        <label for="product-name">名称:</label>
+        <input type="text" id="product-name-input" value="${isEdit ? product.name : ''}" required>
+        
+        <label for="product-price">价格 (分):</label>
+        <input type="number" id="product-price-input" value="${isEdit ? product.price : ''}" required min="0">
+        
+        <label for="product-options">规格 (用逗号分隔，如: 热,冷):</label>
+        <input type="text" id="product-options-input" value="${optionsString}">
+        
+        <div class="modal-actions">
+            <button id="modal-submit-btn" class="primary-btn">${isEdit ? '保存更改' : '新增'}</button>
+            <button id="modal-cancel-btn" class="secondary-btn">取消</button>
+        </div>
+    `;
+    modal.appendChild(content);
+    document.body.appendChild(modal);
+
+    // 绑定事件... (提交逻辑类似于 showCategoryModal，这里略过复杂性，专注于结构)
+    content.querySelector('#modal-cancel-btn').onclick = () => document.body.removeChild(modal);
+    
+    content.querySelector('#modal-submit-btn').onclick = async () => {
+        const pData = {
+            id: isEdit ? product.id : null,
+            category_id: parseInt(content.querySelector('#product-category-input').value),
+            name: content.querySelector('#product-name-input').value.trim(),
+            price: parseInt(content.querySelector('#product-price-input').value),
+            // 将逗号分隔的规格字符串转为数组
+            options: content.querySelector('#product-options-input').value.split(',').map(o => o.trim()).filter(o => o.length > 0)
+        };
+        
+        // 验证...
+        if (!pData.name || isNaN(pData.price) || pData.price < 0) {
+            content.querySelector('#product-modal-error').textContent = '请检查输入。';
+            return;
+        }
+
+        const result = isEdit 
+            ? await window.api.updateProduct(pData)
+            : await window.api.insertProduct(pData);
+            
+        if (result.success) {
+            document.body.removeChild(modal);
+            renderProductManagementInterface();
+        } else {
+            content.querySelector('#product-modal-error').textContent = `操作失败: ${result.error}`;
+        }
+    };
+}
+
+async function handleProductDelete(e) {
+    const productId = parseInt(e.target.dataset.id);
+    
+    if (!confirm(`确定要删除商品 ID: ${productId} 吗？`)) {
+        return;
+    }
+
+    const result = await window.api.deleteProduct(productId); 
+
+    if (result.success) {
+        alert('商品删除成功！');
+        renderProductManagementInterface(); // 刷新列表
+    } else {
+        alert(`商品删除失败：${result.error}`);
+    }
+}
+
+function bindManagementEvents() {
+    const view = elements.managementView;
+
+    view.querySelector('#back-to-products-btn').addEventListener('click', async () => {
+        await loadDataAndRenderPOS();
+        showProductGridView();
+    });
+
+
+    // 1. 分类删除事件 (重点)
+    view.querySelectorAll('.delete-category-btn').forEach(btn => {
+        btn.addEventListener('click', handleCategoryDelete);
+    });
+    
+    // 2. 商品删除事件 (简单删除)
+    view.querySelectorAll('.delete-product-btn').forEach(btn => {
+        btn.addEventListener('click', handleProductDelete);
+    });
+
+    // 3. 其它事件 (占位，待实现模态框逻辑)
+    view.querySelector('#add-category-btn').addEventListener('click', () => showCategoryModal());
+    view.querySelector('#add-product-btn').addEventListener('click', () => showProductModal());
+    view.querySelectorAll('.edit-category-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            // 从 data-* 属性获取数据并传入模态框
+            showCategoryModal({
+                id: parseInt(e.target.dataset.id),
+                name: e.target.dataset.name
+            });
+        });
+    });
+    view.querySelectorAll('.edit-product-btn').forEach(async btn => {
+        btn.addEventListener('click', async (e) => {
+            const productId = parseInt(e.target.dataset.id);
+            const result = await window.api.getProductById(productId); 
+            console.log(result)
+            if (result) {
+                return showProductModal(result);
+            }
+            alert('商品查询失败');
+        });
+    });
+}
+
+/**
+ * 异步加载最新的商品和分类数据，更新 state，并渲染主 POS 界面。
+ */
+async function loadDataAndRenderPOS() {
+    try {
+        // 1. 调用 IPC 接口获取最新数据
+        const result = await window.api.getInitialData(); 
+        
+        if (!result.success) {
+            console.error("加载初始数据失败:", result.error);
+            alert("加载商品数据失败，请检查数据库连接。");
+            return;
+        }
+
+        // 2. 更新全局 state
+        state.categories = result.categories;
+        state.products = result.products;
+        
+        // 确保 currentCategoryId 仍然有效或指向第一个分类
+        if (result.categories.length > 0) {
+            state.currentCategoryId = result.categories[0].id;
+        }
+
+        // 3. 渲染主 POS 界面
+        renderCategories();
+        renderProducts();
+
+    } catch (error) {
+        console.error('加载主界面数据时发生错误:', error);
+    }
+}
 
 // --- 初始化与监听 ---
 
@@ -737,6 +1225,7 @@ async function init() {
     elements.cartList.addEventListener('click', handleCartControls);
     elements.checkoutBtn.addEventListener('click', handleCheckout);
     elements.showOrderHistoryBtn.addEventListener('click', handleShowOrderHistory);
+    elements.showManagementBtn.addEventListener('click', handleShowProductManagement);
     
     // 报表 Modal 监听
     elements.showReportBtn.addEventListener('click', () => { elements.reportModal.style.display = 'flex'; });
@@ -744,25 +1233,7 @@ async function init() {
     elements.exportCsvBtn.addEventListener('click', handleExportCsv);
     
     // 首次加载数据
-    try {
-        const data = await window.api.getInitialData();
-        console.log('test', data)
-        state.categories = data.categories;
-        state.products = data.products;
-        
-        // 默认激活第一个分类
-        if (data.categories.length > 0) {
-            state.currentCategoryId = data.categories[0].id;
-        }
-
-
-        renderCategories();
-        renderProducts();
-
-    } catch (error) {
-        console.error("初始化数据失败:", error);
-        alert("应用初始化失败，请检查数据库连接或 init_data.js 是否运行。");
-    }
+    loadDataAndRenderPOS();
 }
 
 function setupLogin() {

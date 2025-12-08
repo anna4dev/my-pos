@@ -68,6 +68,24 @@ const getCategories = db.prepare('SELECT * FROM categories');
 const getProductsByCat = db.prepare('SELECT * FROM products WHERE category_id = ?');
 const getUserByUsernameStmt = db.prepare('SELECT id, username, password_hash FROM users WHERE username = ?');
 
+// 分类
+const getAllProductsStmt = db.prepare('SELECT id, category_id, name, price, options FROM products ORDER BY category_id, id');
+const getAllCategoriesStmt = db.prepare('SELECT id, name FROM categories ORDER BY id');
+const insertCategoryStmt = db.prepare('INSERT INTO categories (name) VALUES (?)');
+const updateCategoryStmt = db.prepare('UPDATE categories SET name = ? WHERE id = ?');
+const deleteCategoryStmt = db.prepare('DELETE FROM categories WHERE id = ?');
+
+const deleteProductsByCategoryStmt = db.prepare('DELETE FROM products WHERE category_id = ?');
+// 统计分类下的商品数量
+const countProductsInCategoryStmt = db.prepare('SELECT COUNT(id) AS count FROM products WHERE category_id = ?');
+
+// 商品
+const getProductByIdStmt = db.prepare('SELECT id, category_id, name, price, options FROM products WHERE id = ?');
+const insertProductStmt = db.prepare('INSERT INTO products (category_id, name, price, options) VALUES (?, ?, ?, ?)');
+const updateProductStmt = db.prepare('UPDATE products SET category_id = ?, name = ?, price = ?, options = ? WHERE id = ?');
+const deleteProductStmt = db.prepare('DELETE FROM products WHERE id = ?');
+
+
 // 订单主表插入语句
 const insertOrder = db.prepare(`
     INSERT INTO orders (order_no, total_amount, created_at) 
@@ -216,5 +234,142 @@ module.exports = {
         }));
 
         return order;
+    },
+    /**
+     * 新增分类
+     * @param {object} cData - { name }
+     */
+    addCategory: (cData) => {
+        try {
+            const info = insertCategoryStmt.run(cData.name);
+            return { success: true, id: info.lastInsertRowid };
+        } catch (error) {
+            console.error("DB Error: addCategory", error);
+            return { success: false, error: error.message };
+        }
+    },
+
+    /**
+     * 更新分类
+     * @param {object} cData - { id, name }
+     */
+    updateCategory: (cData) => {
+        try {
+            updateCategoryStmt.run(cData.name, cData.id);
+            return { success: true };
+        } catch (error) {
+            console.error("DB Error: updateCategory", error);
+            return { success: false, error: error.message };
+        }
+    },
+
+    /**
+     * 删除分类
+     * @param {number} id - 分类ID
+     */
+    delCategory: (id) => {
+        try {
+            // 1. 统计将要删除的商品数量，用于返回给前端进行提醒
+            const { count } = countProductsInCategoryStmt.get(id);
+
+            // 2. 创建事务函数
+            const deleteTransaction = db.transaction(() => {
+                // a. 删除该分类下的所有商品
+                deleteProductsByCategoryStmt.run(id);
+
+                // b. 删除分类本身
+                const deleteCategoryResult = deleteCategoryStmt.run(id);
+                
+                if (deleteCategoryResult.changes === 0) {
+                     // 抛出错误，回滚事务
+                    throw new Error("Category not found or already deleted.");
+                }
+            });
+
+            // 3. 执行事务
+            deleteTransaction();
+            
+            // 4. 返回删除的商品数量给前端
+            return { success: true, deletedProductsCount: count };
+
+        } catch (error) {
+            console.error("DB Error: delCategory Transaction Failed", error);
+            // 确保只返回通用的错误信息
+            return { success: false, error: "删除分类失败: " + error.message };
+        }
+    },
+
+    // --- 商品管理 CRUD ---
+
+    getProductById: (id) => getProductByIdStmt.get(id),
+    /**
+     * 新增商品
+     * @param {object} pData - { category_id, name, price, options }
+     */
+    addProduct: (pData) => {
+        try {
+            // 选项需要序列化为 JSON 字符串
+            const optionsJson = JSON.stringify(pData.options || []);
+            const info = insertProductStmt.run(
+                pData.category_id,
+                pData.name,
+                pData.price,
+                optionsJson
+            );
+            return { success: true, id: info.lastInsertRowid };
+        } catch (error) {
+            console.error("DB Error: addProduct", error);
+            return { success: false, error: error.message };
+        }
+    },
+
+    /**
+     * 更新商品
+     * @param {object} pData - { id, category_id, name, price, options }
+     */
+    updateProduct: (pData) => {
+        try {
+            const optionsJson = JSON.stringify(pData.options || []);
+            updateProductStmt.run(
+                pData.category_id,
+                pData.name,
+                pData.price,
+                optionsJson,
+                pData.id
+            );
+            return { success: true };
+        } catch (error) {
+            console.error("DB Error: updateProduct", error);
+            return { success: false, error: error.message };
+        }
+    },
+
+    /**
+     * 删除商品
+     * @param {number} id - 商品ID
+     */
+    delProduct: (id) => {
+        try {
+            deleteProductStmt.run(id);
+            return { success: true };
+        } catch (error) {
+            console.error("DB Error: delProduct", error);
+            return { success: false, error: error.message };
+        }
+    },
+    getAllProductsAndCategories: () => {
+        try {
+            // 在同一时刻获取，确保数据一致
+            const categories = getAllCategoriesStmt.all();
+            const products = getAllProductsStmt.all(); 
+
+            return { 
+                success: true, 
+                data: { categories, products } 
+            };
+        } catch (error) {
+            console.error("DB Error: getAllProductsAndCategories", error);
+            return { success: false, error: error.message };
+        }
     },
 };
