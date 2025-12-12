@@ -9,16 +9,37 @@
         width: 200px;
         font-size: 18px;
         margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      #receipt-content {
+        width: 100%;
+        box-sizing: border-box;
       }
 
       .header {
         text-align: center;
-        margin-bottom: 10px;
+        padding: 0;
+        margin: 0 0 5px 0;
+      }
+
+      .header h3 {
+        margin: 5px 0; /* 标题上下间距 */
+        padding: 0;
+        font-size: 20px;
       }
 
       .header p {
+        margin: 0;
         text-align: left;
-        font-size: 16px;
+        font-size: 14px;
+      }
+
+      .separator {
+        border-top: 1px dashed #000;
+        margin: 5px 0; /* 上下留白 */
+        width: 100%; /* 确保它跨满父容器宽度 */
       }
 
       .item-list {
@@ -29,7 +50,7 @@
 
       .item {
         display: grid;
-        grid-template-columns: 1fr 30px 50px;
+        grid-template-columns: 1fr 30px;
         gap: 3px;
         /* 列之间的间距 */
         margin-bottom: 10px;
@@ -54,12 +75,12 @@
         const content = document.getElementById("receipt-content");
         let html = `
                 <div class="header">
-                    <h2>上引咖啡</h2>
+                    <h3>上引咖啡</h3>
                     <p>订单号: ${orderData.orderNo}</p>
                     <p>日期: ${new Date(orderData.createdAt).toLocaleString(
                       "zh-CN"
                     )}</p>
-                    <p>---------------------------------</p>
+                    <div class="separator"></div>
                 </div>
                 <ul class="item-list">
             `;
@@ -72,10 +93,11 @@
                     <li class="item">
                         <span>${item.name} ${options}</span>
                         <span>x${item.count}</span>
-                        <span>¥ ${(item.price / 100).toFixed(2)}</span>
                     </li>
                 `;
         });
+
+        // <span>¥ ${(item.price / 100).toFixed(2)}</span>
 
         html += `
                 </ul>

@@ -6,7 +6,7 @@ const fs = require("fs");
 // const logPath = "C:\\electron-debug.log";
 const log = (msg) => {
   // if (process.platform === "darwin") {
-    console.log(msg);
+  console.log(msg);
   // } else {
   //   fs.appendFileSync(logPath, `[${new Date().toISOString()}] ${msg}\n`);
   // }
@@ -47,6 +47,99 @@ function createWindows() {
   }
 }
 
+function openCategoryModal(data) {
+  return new Promise((resolve) => {
+    const modal = new BrowserWindow({
+      width: 450,
+      height: 250,
+      parent: adminWin,
+      modal: true,
+      show: false,
+      resizable: false,
+      minimizable: false,
+      maximizable: false,
+      webPreferences: {
+        preload: path.join(__dirname, "preload.js"),
+      },
+    });
+
+    modal.loadFile("src/components/category-modal/index.html");
+
+    // 数据传入 modal
+    modal.webContents.once("did-finish-load", () => {
+      modal.webContents.send("init-category-modal", data);
+      // modal.show();
+      modal.webContents
+        .executeJavaScript(
+          `
+        new Promise(resolve => {
+          const height = document.body.scrollHeight;
+          resolve(height);
+        });
+      `
+        )
+        .then((contentHeight) => {
+          modal.setSize(450, contentHeight + 40); // 内容加一点 margin
+          modal.center();
+          modal.show();
+        });
+    });
+
+    // modal 返回数据
+    ipcMain.once("close-category-modal", (event, result) => {
+      resolve(result);
+      modal.close();
+    });
+  });
+}
+
+function openProductModal(data) {
+  return new Promise((resolve) => {
+    const modal = new BrowserWindow({
+      width: 450,
+      height: 250,
+      parent: adminWin,
+      modal: true,
+      show: false,
+      resizable: false,
+      minimizable: false,
+      maximizable: false,
+      webPreferences: {
+        preload: path.join(__dirname, "preload.js"),
+      },
+    });
+
+    modal.loadFile("src/components/product-modal/index.html");
+
+    // 数据传入 modal
+    modal.webContents.once("did-finish-load", () => {
+      modal.webContents.send("init-product-modal", data);
+      // modal.show();
+      modal.webContents
+        .executeJavaScript(
+          `
+        new Promise(resolve => {
+          const height = document.body.scrollHeight;
+          console.log(height);
+          resolve(height);
+        });
+      `
+        )
+        .then((contentHeight) => {
+          modal.setSize(450, contentHeight + 80); // 内容加一点 margin
+          modal.center();
+          modal.show();
+        });
+    });
+
+    // modal 返回数据
+    ipcMain.once("close-product-modal", (event, result) => {
+      resolve(result);
+      modal.close();
+    });
+  });
+}
+
 app.whenReady().then(() => {
   log("Database User Data Path:", app.getPath("userData"));
   // CRITICAL: 数据库模块必须在 app 就绪后加载，以确保 app.getPath('userData') 可用
@@ -55,6 +148,13 @@ app.whenReady().then(() => {
   createWindows();
 
   // --- IPC 通信逻辑 ---
+  ipcMain.handle("open-category-modal", async (event, payload) => {
+    return await openCategoryModal(payload);
+  });
+
+  ipcMain.handle("open-product-modal", async (event, payload) => {
+    return await openProductModal(payload);
+  });
 
   // 响应：获取初始化数据 (UNCHANGED)
   ipcMain.handle("get-initial-data", () => {
@@ -259,14 +359,14 @@ app.whenReady().then(() => {
   });
 
   // 分类管理
-  ipcMain.handle("list-categories", (event, ) => {
+  ipcMain.handle("list-categories", (event) => {
     try {
       const result = db.getAllCategories();
-      return {success: !!result, data: result}
+      return { success: !!result, data: result };
     } catch (error) {
       console.error(`获取分类失败:`, error);
       return { success: false, error: error.message };
-    } 
+    }
   });
   ipcMain.handle("add-category", (event, pData) => {
     return db.addCategory(pData);
@@ -287,10 +387,10 @@ app.whenReady().then(() => {
   });
 
   // 商品管理
-  ipcMain.handle("list-products", (event, ) => {
+  ipcMain.handle("list-products", (event) => {
     return db.getAllProductsAndCategories();
   });
-  
+
   ipcMain.handle("get-product", (event, id) => {
     return db.getProductById(id);
   });

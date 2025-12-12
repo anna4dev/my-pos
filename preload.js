@@ -77,4 +77,16 @@ contextBridge.exposeInMainWorld("api", {
   insertCategory: (cData) => ipcRenderer.invoke("add-category", cData),
   updateCategory: (cData) => ipcRenderer.invoke("edit-category", cData),
   deleteCategory: (id) => ipcRenderer.invoke("del-category", id),
+
+  // 分类窗口
+  openCategoryModal: (data) => ipcRenderer.invoke("open-category-modal", data),
+  onCategoryModalInit: (callback) =>
+    ipcRenderer.on("init-category-modal", (e, d) => callback(d)),
+  closeCategoryModal: (data) => ipcRenderer.send("close-category-modal", data),
+
+  // 商品窗口
+  openProductModal: (data) => ipcRenderer.invoke("open-product-modal", data),
+  onProductModalInit: (callback) =>
+    ipcRenderer.on("init-product-modal", (e, d) => callback(d)),
+  closeProductModal: (data) => ipcRenderer.send("close-product-modal", data),
 });
