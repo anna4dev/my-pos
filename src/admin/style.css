@@ -19,7 +19,7 @@ body {
   font-size: 1.2em;
 }
 
-/* 类别导航 (左侧) */
+/* category nav list - left */
 #category-nav {
   width: 160px;
   background-color: #ffffff;
@@ -55,7 +55,7 @@ body {
   font-weight: bold;
 }
 
-/* 商品区 (中间) */
+/* products - center */
 #product-area {
   flex-grow: 1;
   padding: 0;
@@ -86,7 +86,7 @@ body {
 }
 
 .product-card.has-options {
-  cursor: default; /* 有选项时，卡片主体不应该有点击手势 */
+  cursor: default;
 }
 
 .product-option-buttons {
@@ -94,15 +94,14 @@ body {
   padding-top: 8px;
   display: flex;
   justify-content: space-around;
-  gap: 8px; /* 按钮间距 */
+  gap: 8px;
 }
 
 .option-choice-btn {
   flex-grow: 1;
-  padding: 10px 5px; /* 增加高度，更容易点击 */
+  padding: 10px 5px;
   font-size: 1.1em;
   font-weight: bold;
-  /* 样式美化 */
   border: 1px solid #3f51b5;
   background-color: #e8eaf6;
   color: #3f51b5;
@@ -111,7 +110,7 @@ body {
 }
 
 .option-choice-btn:active {
-  transform: scale(0.98); /* 增加按压反馈 */
+  transform: scale(0.98);
 }
 
 .product-name {
@@ -124,7 +123,7 @@ body {
   font-size: 1.1em;
 }
 
-/* 购物车 (右侧) */
+/* shopping cart - right */
 #cart-checkout {
   width: 350px;
   background-color: #ffffff;
@@ -143,18 +142,18 @@ body {
 
 .cart-item {
   display: flex;
-  flex-direction: column; /* 关键：让子元素 (两行) 垂直堆叠 */
+  flex-direction: column;
   padding: 8px 0;
   border-bottom: 1px dashed #eee;
   font-size: 0.95em;
 }
 
-/* 主内容行 (商品名和价格 - 放在同一行) */
+/* product name, price */
 .item-main-row {
   display: flex;
-  justify-content: space-between; /* 名称推到左边，价格推到右边 */
+  justify-content: space-between;
   width: 100%;
-  margin-bottom: 5px; /* 与控制行之间留一点间距 */
+  margin-bottom: 5px;
 }
 
 .item-info {
@@ -176,7 +175,7 @@ body {
 .item-controls-row {
   width: 100%;
   text-align: right;
-  padding-right: 5px; /* 稍微靠右边留出一点空隙 */
+  padding-right: 5px;
 }
 
 .item-controls button {
@@ -187,11 +186,11 @@ body {
   border-radius: 4px;
   font-weight: bold;
   cursor: pointer;
-  margin-left: 8px; /* 按钮之间的间距 */
+  margin-left: 8px;
   min-width: 30px;
   font-size: 1.1em;
-  font-weight: 900; /* 使用更粗的字重 */
-  line-height: 1; /* 确保符号居中 */
+  font-weight: 900;
+  line-height: 1;
 }
 
 #totals {
@@ -238,7 +237,7 @@ body {
   border-radius: 4px;
 }
 
-/* Modal 样式 */
+/* report export Modal */
 .modal {
   position: fixed;
   top: 0;
@@ -275,7 +274,7 @@ body {
   border-style: solid;
 }
 
-/* 历史订单列表样式 */
+/* order list table */
 .order-table {
   width: 100%;
   border-collapse: collapse;
@@ -293,7 +292,7 @@ body {
   background-color: #f2f2f2;
 }
 
-/* 订单列表视图的头部 */
+/* order list header */
 #order-list-view,
 #management-view {
   padding: 20px;
@@ -328,7 +327,7 @@ body {
   cursor: pointer;
 }
 
-/* 分页控件样式 */
+/* order list pagination */
 .pagination {
   margin-top: 20px;
   display: flex;
@@ -354,32 +353,32 @@ body {
   opacity: 0.6;
 }
 
-/* 模态框背景 */
+/* modal backdrop */
 .modal-backdrop {
   position: fixed;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: rgba(0, 0, 0, 0.5); /* 半透明黑色背景 */
+  background-color: rgba(0, 0, 0, 0.5);
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 1000; /* 确保在最顶层 */
+  z-index: 1000;
 }
 
-/* 模态框内容容器 */
+/* order detail modal */
 .modal-content {
   background-color: white;
   padding: 30px;
   border-radius: 8px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
   width: 90%;
-  max-width: 600px; /* 限制弹窗宽度 */
+  max-width: 600px;
   position: relative;
 }
 
-/* 订单详情表格样式 */
+/* order detail table */
 .order-items-table {
   width: 100%;
   border-collapse: collapse;
@@ -404,7 +403,7 @@ body {
   text-align: right; /* 金额右对齐 */
 }
 
-/* 总计和关闭按钮 */
+/* order detail */
 .order-total-footer {
   text-align: right;
   font-size: 1.2em;
@@ -423,7 +422,7 @@ body {
 }
 
 /* -------------------------------------- */
-/* 登录界面样式 */
+/* login UI */
 /* -------------------------------------- */
 #login-overlay {
   position: fixed;
@@ -431,11 +430,11 @@ body {
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: #f4f7f6; /* 浅色背景 */
+  background-color: #f4f7f6;
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 9999; /* 确保它在所有内容之上 */
+  z-index: 9999;
 }
 
 .login-container {
@@ -490,17 +489,17 @@ body {
 }
 
 /* -------------------------------------- */
-/* 商品和分类管理视图样式 (#product-management-view) */
+/*  (#product-management-view) */
 /* -------------------------------------- */
 
 /* 主容器 */
 #product-management-view {
   padding: 20px;
   background-color: #f4f7f6;
-  overflow-y: auto; /* 允许整个管理页面滚动 */
+  overflow-y: auto;
 }
 
-/* 区域头部 (Header for Categories and Products) */
+/* (Header for Categories and Products) */
 .management-header {
   display: flex;
   justify-content: space-between;
@@ -516,10 +515,10 @@ body {
   font-weight: 600;
 }
 
-/* 按钮样式 (统一) */
+/* button style */
 .management-header button {
   padding: 8px 15px;
-  background-color: #3f51b5; /* 主要操作色 */
+  background-color: #3f51b5; /* theme color */
   color: white;
   border: none;
   border-radius: 5px;
@@ -533,7 +532,7 @@ body {
 }
 
 /* -------------------------------------- */
-/* 1. 分类列表样式 */
+/* 1. category list */
 /* -------------------------------------- */
 
 .category-management-list {
@@ -551,7 +550,7 @@ body {
   border: 1px solid #ccc;
   border-radius: 6px;
   padding: 10px 15px;
-  width: 270px; /* 确保最小宽度 */
+  width: 270px; /* min width */
 }
 
 .category-name {
@@ -561,7 +560,7 @@ body {
 }
 
 /* -------------------------------------- */
-/* 2. 商品表格样式 */
+/* 2. products */
 /* -------------------------------------- */
 
 .product-management-table {
@@ -580,16 +579,16 @@ body {
 }
 
 .product-management-table th {
-  background-color: #eef; /* 浅蓝色表头 */
+  background-color: #eef;
   font-weight: 600;
   color: #3f51b5;
 }
 
 .product-management-table tr:nth-child(even) {
-  background-color: #f9f9f9; /* 斑马条纹 */
+  background-color: #f9f9f9;
 }
 
-/* 特定列宽度调整 */
+/* set col width */
 .product-management-table td:nth-child(1) {
   width: 5%;
 } /* ID */
@@ -598,12 +597,12 @@ body {
 } /* Category */
 .product-management-table td:nth-child(6) {
   width: 15%;
-} /* 操作 */
+} /* actions */
 
-/* 危险操作按钮 (通用) */
+/* danger action */
 .danger-btn,
 .category-actions .danger-btn {
-  background-color: #f44336; /* 红色 */
+  background-color: #f44336;
   color: white;
   border: none;
   padding: 5px 10px;

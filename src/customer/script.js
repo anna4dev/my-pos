@@ -1,4 +1,4 @@
-// DOM 元素缓存
+// DOM elements cache
 const elements = {
     cartList: document.getElementById('customer-cart-list'),
     totalDisplay: document.getElementById('customer-total'),
@@ -6,24 +6,24 @@ const elements = {
 };
 
 /**
- * 接收主进程同步的数据并渲染屏幕
- * @param {object} cartData - 包含 { items, total } 的对象
+ * Receives synchronized data from the main process and renders the screen
+ * @param {object} cartData - Object containing { items, total }
  */
 function renderScreen(cartData) {
     const items = cartData.items || [];
     const total = cartData.total || 0;
     
-    // 清空旧列表，保留表头
+    // Clear old list, keeping the header
     const list = elements.cartList;
     while (list.children.length > 1) {
         list.removeChild(list.lastChild);
     }
     
     if (items.length === 0) {
-        // ... (创建空消息的逻辑不变)
+        // Logic for creating the empty message
         elements.emptyMessage = document.createElement('li');
         elements.emptyMessage.id = 'empty-message';
-        elements.emptyMessage.textContent = '请开始点单';
+        elements.emptyMessage.textContent = 'Please start ordering';
         list.appendChild(elements.emptyMessage);
     } else {
         items.forEach(item => {
@@ -32,55 +32,55 @@ function renderScreen(cartData) {
             const li = document.createElement('li');
             li.className = 'customer-item';
             
-            // --- 替换 li.innerHTML 的安全构造 ---
+            // --- Safe construction replacing li.innerHTML ---
             
-            // 1. 商品名称和选项容器
+            // 1. Product name and options container
             const nameSpan = document.createElement('span');
             nameSpan.className = 'item-name';
-            // 插入商品名
+            // Insert product name
             nameSpan.textContent = item.name + ' '; 
             
-            // 2. 选项/规格 (Options)
+            // 2. Options/Specifications
             if (item.options && item.options.length > 0) {
                 const optionsSpan = document.createElement('span');
                 optionsSpan.className = 'item-options';
-                // ✅ 安全：使用 textContent 插入选项文本
+                // Safe: using textContent to insert options text
                 optionsSpan.textContent = `(${item.options.join(', ')})`;
                 nameSpan.appendChild(optionsSpan);
             }
             li.appendChild(nameSpan);
             
-            // 3. 数量
+            // 3. Quantity
             const countSpan = document.createElement('span');
             countSpan.className = 'center';
             countSpan.textContent = `x${item.count}`;
             li.appendChild(countSpan);
             
-            // 4. 单价
+            // 4. Unit Price
             const priceSpan = document.createElement('span');
             priceSpan.className = 'center';
             priceSpan.textContent = (item.price / 100).toFixed(2);
             li.appendChild(priceSpan);
             
-            // 5. 小计
+            // 5. Subtotal
             const totalSpan = document.createElement('span');
             totalSpan.className = 'center';
             totalSpan.textContent = (itemTotal / 100).toFixed(2);
             li.appendChild(totalSpan);
 
-            // --- 安全构造结束 ---
+            // --- End of safe construction ---
             
             list.appendChild(li);
         });
     }
 
-    // 更新总金额显示 (超大字体)
+    // Update total amount display (Extra large font)
     elements.totalDisplay.textContent = `¥ ${(total / 100).toFixed(2)}`;
 }
 
-// --- 初始化 ---
+// --- Initialization ---
 function init() {
-    // 监听主进程发来的同步消息
+    // Listen for synchronization messages from the main process
     window.api.onCartSync(renderScreen);
 }
 

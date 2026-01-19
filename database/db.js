@@ -1,29 +1,29 @@
-const { app } = require("electron"); // 1. 引入 app 模块以获取用户数据路径
+const { app } = require("electron"); // 1. Import app module to get the user data path
 const Database = require("better-sqlite3");
 const path = require("path");
 const fs = require("fs");
 
-// --- 路径配置优化 (确保打包后可写入) ---
+// --- Path Configuration Optimization (Ensures write access after packaging) ---
 const dbDirectory = app.getPath("userData");
 const dbPath = path.join(dbDirectory, "pos.sqlite");
 
-// 确保数据库目录存在
+// Ensure the database directory exists
 if (!fs.existsSync(dbDirectory)) {
   fs.mkdirSync(dbDirectory, { recursive: true });
 }
 
-// 连接数据库实例
+// Connect to the database instance
 const db = new Database(dbPath);
 
-// --- 数据库初始化 (使用新的表结构) ---
+// --- Database Initialization (Using new table structure) ---
 db.exec(`
-    -- 1. 类别表
+    -- 1. Categories Table
     CREATE TABLE IF NOT EXISTS categories (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT NOT NULL
     );
 
-    -- 2. 菜品表
+    -- 2. Products Table
     CREATE TABLE IF NOT EXISTS products (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         category_id INTEGER,
@@ -33,7 +33,7 @@ db.exec(`
         FOREIGN KEY(category_id) REFERENCES categories(id)
     );
 
-    -- 3. 订单主表 (更新后的结构)
+    -- 3. Orders Main Table (Updated structure)
     CREATE TABLE IF NOT EXISTS orders (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         order_no TEXT NOT NULL UNIQUE,
@@ -42,7 +42,7 @@ db.exec(`
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
 
-    -- 4. 订单详情表 (新增的结构)
+    -- 4. Order Items Table (New structure)
     CREATE TABLE IF NOT EXISTS order_items (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         order_id INTEGER NOT NULL,
@@ -54,7 +54,7 @@ db.exec(`
         FOREIGN KEY(order_id) REFERENCES orders(id)
     );
 
-    -- 用户表
+    -- Users Table
     CREATE TABLE IF NOT EXISTS users (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         username TEXT NOT NULL UNIQUE,
@@ -62,7 +62,7 @@ db.exec(`
     );
 `);
 
-// --- 预编译语句 (Prepared Statements) ---
+// --- Prepared Statements ---
 const getCategories = db.prepare("SELECT * FROM categories");
 const getProductsByCat = db.prepare(
   "SELECT * FROM products WHERE category_id = ?"
@@ -71,7 +71,7 @@ const getUserByUsernameStmt = db.prepare(
   "SELECT id, username, password_hash FROM users WHERE username = ?"
 );
 
-// 分类
+// Category queries
 const getAllProductsStmt = db.prepare(
   "SELECT id, category_id, name, price, options FROM products ORDER BY category_id, id"
 );
@@ -89,12 +89,12 @@ const deleteCategoryStmt = db.prepare("DELETE FROM categories WHERE id = ?");
 const deleteProductsByCategoryStmt = db.prepare(
   "DELETE FROM products WHERE category_id = ?"
 );
-// 统计分类下的商品数量
+// Count the number of products under a category
 const countProductsInCategoryStmt = db.prepare(
   "SELECT COUNT(id) AS count FROM products WHERE category_id = ?"
 );
 
-// 商品
+// Product queries
 const getProductByIdStmt = db.prepare(
   "SELECT id, category_id, name, price, options FROM products WHERE id = ?"
 );
@@ -106,19 +106,19 @@ const updateProductStmt = db.prepare(
 );
 const deleteProductStmt = db.prepare("DELETE FROM products WHERE id = ?");
 
-// 订单主表插入语句
+// Order main table insertion
 const insertOrder = db.prepare(`
     INSERT INTO orders (order_no, total_amount, created_at) 
     VALUES (?, ?, ?)
 `);
 
-// 订单详情表插入语句
+// Order items table insertion
 const insertOrderItem = db.prepare(`
     INSERT INTO order_items (order_id, product_name, category_name, unit_price, quantity, options_used) 
     VALUES (@orderId, @productName, @categoryName, @unitPrice, @quantity, @optionsUsed)
 `);
 
-// --- 报表查询语句 (Prepared Statements) ---
+// --- Report Queries (Prepared Statements) ---
 const getReportsStatement = db.prepare(`
     SELECT
         T1.order_no,
@@ -136,11 +136,11 @@ const getReportsStatement = db.prepare(`
     ORDER BY T1.created_at DESC, T1.order_no
 `);
 
-// --- 历史订单语句 (Prepared Statements) ---
-// 1. 获取总订单数
+// --- Order History Queries (Prepared Statements) ---
+// 1. Get total count of orders
 const getTotalOrdersCount = db.prepare("SELECT COUNT(*) AS count FROM orders");
 
-// 2. 获取分页订单列表
+// 2. Get paged order list
 const getOrdersPaged = db.prepare(`
     SELECT id, order_no, total_amount, created_at
     FROM orders
@@ -148,78 +148,72 @@ const getOrdersPaged = db.prepare(`
     LIMIT ? OFFSET ?
 `);
 
-// 3. 获取订单主信息
+// 3. Get main order info
 const getOrderMain = db.prepare("SELECT * FROM orders WHERE id = ?");
 
-// 4. 获取订单项明细
+// 4. Get order item details
 const getOrderItems = db.prepare(
   "SELECT product_name, options_used, quantity, unit_price FROM order_items WHERE order_id = ?"
 );
 
 /**
- * 生成符合 YYYYMMdd{4位当日序列号} 格式的订单号。
+ * Generates an order number in the format YYYYMMDD{4-digit sequence number}.
  */
 function generateOrderNo() {
   const now = new Date();
-  // 简化订单号生成，确保 order_no 不为空
+  // Simplify order number generation, ensuring order_no is not empty
   const todayDatePart =
     now.getFullYear().toString() +
     (now.getMonth() + 1).toString().padStart(2, "0") +
     now.getDate().toString().padStart(2, "0");
 
-  let currentSerial = 1; // 默认从 0001 开始
+  let currentSerial = 1; // Default starts at 0001
   const latestOrder = db
     .prepare("SELECT order_no FROM orders ORDER BY id DESC LIMIT 1")
     .get();
   if (latestOrder) {
     const lastOrderNo = latestOrder.order_no;
-    // 订单号的前 8 位是日期部分
+    // The first 8 digits are the date part
     const lastDatePart = lastOrderNo.substring(0, 8);
 
     if (lastDatePart === todayDatePart) {
-      // 是今天的订单：提取末尾 4 位序列号，并 +1
+      // If it is an order from today: extract the last 4-digit sequence and increment by 1
       const lastSerialPart = lastOrderNo.substring(8);
-      // 将字符串转换为整数并 +1
+      // Convert string to integer and increment
       currentSerial = parseInt(lastSerialPart, 10) + 1;
     }
-    // 否则 (如果不是今天的订单)，currentSerial 保持默认值 1
+    // Otherwise (if not today's order), currentSerial remains default value 1
   }
 
-  // 3. 格式化序列号为 4 位，不足前补 0
+  // 3. Format the sequence number to 4 digits with leading zeros
   const serialPart = currentSerial.toString().padStart(4, "0");
 
-  // 4. 组合并返回新的订单号
+  // 4. Combine and return the new order number
   const newOrderNo = todayDatePart + serialPart;
 
   return newOrderNo;
 }
 
-// 缩短orderNo
-// now.getHours().toString().padStart(2, "0") +
-// now.getMinutes().toString().padStart(2, "0")
-// now.getSeconds().toString().padStart(2, '0') +
-// Math.floor(Math.random() * 900 + 100).toString(); // 3位随机数
-
-// --- 核心模块：事务处理 ---
+// --- Core Module: Transaction Processing ---
 
 /**
- * 结账并记录订单流水。
- * @param {object[]} items - 购物车商品数组: [{ name, price, count, categoryName, optionsUsed, ... }]
- * @param {number} totalAmount - 订单总金额 (分)
+ * Checkout and record order transactions.
+ * @param {object[]} items - Array of items in cart: [{ name, price, count, categoryName, optionsUsed, ... }]
+ * @param {number} totalAmount - Total order amount (in cents/smallest unit)
  */
 const createOrder = db.transaction((items, totalAmount) => {
-  // 1. 插入订单主记录
+  // 1. Insert main order record
   const orderNo = generateOrderNo();
   const createdAt = new Date().toISOString();
   const orderInfo = insertOrder.run(orderNo, totalAmount, createdAt);
   const orderId = orderInfo.lastInsertRowid;
 
-  // 2. 循环插入订单详情记录
+  // 2. Loop to insert order item details
   for (const item of items) {
     insertOrderItem.run({
       orderId: orderId,
       productName: item.name,
-      categoryName: item.categoryName || "未分类", // 确保有值
+      categoryName: item.categoryName || "Uncategorized", // Ensure value exists
       unitPrice: item.price,
       quantity: item.count,
       optionsUsed: JSON.stringify(item.options || []),
@@ -230,51 +224,51 @@ const createOrder = db.transaction((items, totalAmount) => {
 });
 
 /**
- * 获取指定日期范围内的订单流水。
- * @param {string} startDate - 开始日期 (ISO 8601 格式，如 '2025-12-01T00:00:00.000Z')
- * @param {string} endDate - 结束日期 (ISO 8601 格式，如 '2025-12-31T23:59:59.999Z')
- * @returns {object[]} - 扁平化的流水记录数组。
+ * Get order transaction logs within a specified date range.
+ * @param {string} startDate - Start date (ISO 8601 format, e.g., '2025-12-01T00:00:00.000Z')
+ * @param {string} endDate - End date (ISO 8601 format, e.g., '2025-12-31T23:59:59.999Z')
+ * @returns {object[]} - Flattened array of transaction records.
  */
 function getReports(startDate, endDate) {
-  // 确保日期参数格式正确，用于 SQL 的 BETWEEN 语句
+  // Ensure date parameter formatting is correct for SQL BETWEEN statement
   return getReportsStatement.all({
     startDate: startDate,
     endDate: endDate,
   });
 }
 
-// --- 模块导出 ---
+// --- Module Exports ---
 module.exports = {
   getAllCategories: () => getCategories.all(),
   getProducts: (catId) => getProductsByCat.all(catId),
   getUserByUsername: (username) => getUserByUsernameStmt.get(username),
   createOrder: createOrder,
   getReports: getReports,
-  // 1. 获取分页订单列表和总数
+  // 1. Get paged order list and total count
   getPaginatedOrders: (limit, offset) => {
-    // 使用预编译语句获取总记录数
+    // Use prepared statement to get total count
     const totalResult = getTotalOrdersCount.get();
     const totalCount = totalResult.count;
 
-    // 使用预编译语句获取当前页的订单数据
+    // Use prepared statement to get order data for current page
     const data = getOrdersPaged.all(limit, offset);
 
     return { data: data, totalCount: totalCount };
   },
 
-  // 2. 获取单个订单的完整明细
+  // 2. Get full details for a single order
   getOrderDetails: (orderId) => {
-    // 1. 使用预编译语句获取订单主信息
+    // 1. Use prepared statement to get main order info
     const order = getOrderMain.get(orderId);
 
     if (!order) {
       return null;
     }
 
-    // 2. 使用预编译语句获取订单项明细
+    // 2. Use prepared statement to get order items
     const items = getOrderItems.all(orderId);
 
-    // 3. 转换 JSON 字符串到数组对象
+    // 3. Convert JSON strings back to array objects
     order.items = items.map((item) => ({
       ...item,
       options: JSON.parse(item.options_used || "[]"),
@@ -283,7 +277,7 @@ module.exports = {
     return order;
   },
   /**
-   * 新增分类
+   * Add new category
    * @param {object} cData - { name }
    */
   addCategory: (cData) => {
@@ -297,7 +291,7 @@ module.exports = {
   },
 
   /**
-   * 更新分类
+   * Update category
    * @param {object} cData - { id, name }
    */
   updateCategory: (cData) => {
@@ -311,50 +305,50 @@ module.exports = {
   },
 
   /**
-   * 删除分类
-   * @param {number} id - 分类ID
+   * Delete category
+   * @param {number} id - Category ID
    */
   delCategory: (id) => {
     try {
-      // 1. 统计将要删除的商品数量，用于返回给前端进行提醒
+      // 1. Count products to be deleted for frontend notification
       const { count } = countProductsInCategoryStmt.get(id);
 
-      // 2. 创建事务函数
+      // 2. Create transaction function
       const deleteTransaction = db.transaction(() => {
-        // a. 删除该分类下的所有商品
+        // a. Delete all products under this category
         deleteProductsByCategoryStmt.run(id);
 
-        // b. 删除分类本身
+        // b. Delete the category itself
         const deleteCategoryResult = deleteCategoryStmt.run(id);
 
         if (deleteCategoryResult.changes === 0) {
-          // 抛出错误，回滚事务
+          // Throw error to roll back transaction
           throw new Error("Category not found or already deleted.");
         }
       });
 
-      // 3. 执行事务
+      // 3. Execute transaction
       deleteTransaction();
 
-      // 4. 返回删除的商品数量给前端
+      // 4. Return count of deleted products to frontend
       return { success: true, deletedProductsCount: count };
     } catch (error) {
       console.error("DB Error: delCategory Transaction Failed", error);
-      // 确保只返回通用的错误信息
-      return { success: false, error: "删除分类失败: " + error.message };
+      // Ensure only generic error info is returned
+      return { success: false, error: "Failed to delete category: " + error.message };
     }
   },
 
-  // --- 商品管理 CRUD ---
+  // --- Product Management CRUD ---
 
   getProductById: (id) => getProductByIdStmt.get(id),
   /**
-   * 新增商品
+   * Add new product
    * @param {object} pData - { category_id, name, price, options }
    */
   addProduct: (pData) => {
     try {
-      // 选项需要序列化为 JSON 字符串
+      // Options need to be serialized as a JSON string
       const optionsJson = JSON.stringify(pData.options || []);
       const info = insertProductStmt.run(
         pData.category_id,
@@ -370,7 +364,7 @@ module.exports = {
   },
 
   /**
-   * 更新商品
+   * Update product
    * @param {object} pData - { id, category_id, name, price, options }
    */
   updateProduct: (pData) => {
@@ -391,8 +385,8 @@ module.exports = {
   },
 
   /**
-   * 删除商品
-   * @param {number} id - 商品ID
+   * Delete product
+   * @param {number} id - Product ID
    */
   delProduct: (id) => {
     try {
@@ -405,7 +399,7 @@ module.exports = {
   },
   getAllProductsAndCategories: () => {
     try {
-      // 在同一时刻获取，确保数据一致
+      // Fetch simultaneously to ensure data consistency
       const categories = getAllCategoriesStmt.all();
       const products = getAllProductsStmt.all();
 

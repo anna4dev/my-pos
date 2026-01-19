@@ -6,30 +6,31 @@ const DEFAULT_USERNAME = "1";
 const DEFAULT_PASSWORD = "1";
 const SALT_ROUNDS = 10;
 
-// 1. 连接数据库 (如果没有文件会自动创建)
-// 这里的路径要和你在 main.js / db.js 里定义的一致
+// 1. Connect to database (Automatically creates file if it doesn't exist)
+// Ensure path consistency with main.js / db.js
 const dbFolder = path.join(__dirname, "database");
-// 确保 database 目录存在 (better-sqlite3 会自动创建文件，但目录需要)
+
+// Ensure the database directory exists
 const fs = require("fs");
 if (!fs.existsSync(dbFolder)) {
   fs.mkdirSync(dbFolder);
 }
 const dbPath = path.join(dbFolder, "pos.sqlite");
 
-// 初始化 better-sqlite3 实例
+// Initialize better-sqlite3 instance
 const db = new Database(dbPath, { verbose: console.log });
 
-console.log("⏳ 正在初始化数据库...");
+console.log("Initializing database...");
 
-// 2. 确保表结构存在 (建表)
+// 2. Ensure table structures exist (Create tables)
 const createTables = `
-    -- 1. 类别表 (基础数据)
+    -- 1. Categories table (Base data)
     CREATE TABLE IF NOT EXISTS categories (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT NOT NULL
     );
 
-    -- 2. 菜品表 (基础数据)
+    -- 2. Products table (Base data)
     CREATE TABLE IF NOT EXISTS products (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         category_id INTEGER,
@@ -39,42 +40,42 @@ const createTables = `
         FOREIGN KEY(category_id) REFERENCES categories(id)
     );
     
-    -- ✅ 3. 用户表 (新增)
+    -- 3. Users table
     CREATE TABLE IF NOT EXISTS users (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         username TEXT NOT NULL UNIQUE,
         password_hash TEXT NOT NULL
     );
 
-    -- 4. 订单主表 (记录订单汇总信息)
+    -- 4. Orders table (Summary information)
     CREATE TABLE IF NOT EXISTS orders (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        order_no TEXT NOT NULL,             -- 唯一订单号
-        total_amount INTEGER NOT NULL,      -- 订单总金额 (分)
-        discount_amount INTEGER DEFAULT 0,  -- 优惠金额 (分, 可选)
+        order_no TEXT NOT NULL,             -- Unique order number
+        total_amount INTEGER NOT NULL,      -- Total amount (in cents)
+        discount_amount INTEGER DEFAULT 0,  -- Discount amount (optional)
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
 
-    -- 5. 订单详情表 (记录每一条商品，锁定当时价格，方便对账)
+    -- 5. Order items table (Details for each product, locked price for auditing)
     CREATE TABLE IF NOT EXISTS order_items (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        order_id INTEGER NOT NULL,          -- 关联到 orders.id
-        product_name TEXT NOT NULL,         -- 锁定的商品名称
-        category_name TEXT NOT NULL,        -- 锁定的类别名称 (方便报表分组)
-        unit_price INTEGER NOT NULL,        -- 锁定的成交单价 (分)
-        quantity INTEGER NOT NULL,          -- 数量
-        options_used TEXT,                  -- 锁定的规格选项 (JSON 字符串)
+        order_id INTEGER NOT NULL,          -- Reference to orders.id
+        product_name TEXT NOT NULL,         -- Locked product name
+        category_name TEXT NOT NULL,        -- Locked category name
+        unit_price INTEGER NOT NULL,        -- Locked transaction price
+        quantity INTEGER NOT NULL,          -- Quantity
+        options_used TEXT,                  -- Locked specifications (JSON string)
         FOREIGN KEY(order_id) REFERENCES orders(id)
     );
 `;
 db.exec(createTables);
 
-// 3. 清空旧的菜单数据 (方便重新初始化，保留流水)
+// 3. Clear old menu data (For re-initialization, keeping transaction history)
 db.exec("DELETE FROM products");
 db.exec("DELETE FROM categories");
-// 如果需要清空流水：db.exec('DELETE FROM orders'); db.exec('DELETE FROM order_items');
+// To clear transactions: db.exec('DELETE FROM orders'); db.exec('DELETE FROM order_items');
 
-// 4. 预编译语句 (Prepared Statements)
+// 4. Prepared Statements
 const insertCategory = db.prepare("INSERT INTO categories (name) VALUES (?)");
 const insertProduct = db.prepare(
   "INSERT INTO products (category_id, name, price, options) VALUES (?, ?, ?, ?)"
@@ -84,7 +85,7 @@ const insertUser = db.prepare(
 );
 const getUserCount = db.prepare("SELECT COUNT(*) AS count FROM users");
 
-// --- 定义你的菜单 (数据结构不变) ---
+// --- Menu data definition ---
 const menuData = [
   {
     category: "咖啡",
@@ -180,8 +181,8 @@ const menuData = [
   {
     category: "主食",
     items: [
-      { name: "上引三明治", price: 3000, options: [] },
-      { name: "上引披萨", price: 4200, options: [] },
+      { name: "三明治", price: 3000, options: [] },
+      { name: "披萨", price: 4200, options: [] },
       { name: "肉酱意面", price: 3900, options: [] },
       { name: "三角紫菜包饭 (饭团)泡菜", price: 1200, options: [] },
       { name: "三角紫菜包饭 (饭团)牛肉", price: 1400, options: [] },
@@ -200,20 +201,20 @@ async function initializeData() {
   const userCount = getUserCount.get().count;
 
   if (userCount === 0) {
-    console.log(`🔑 正在生成默认管理员密码哈希...`);
-    // 使用 await 等待哈希完成
+    console.log(`Generating default admin password hash...`);
+    // Use await for hashing
     const defaultHash = await bcrypt.hash(DEFAULT_PASSWORD, SALT_ROUNDS);
 
-    // 2. 插入默认用户
+    // 2. Insert default user
     insertUser.run(DEFAULT_USERNAME, defaultHash);
     console.log(
-      `🔑 默认用户 '${DEFAULT_USERNAME}' 已插入，密码: ${DEFAULT_PASSWORD}`
+      `Default user '${DEFAULT_USERNAME}' inserted with password: ${DEFAULT_PASSWORD}`
     );
   } else {
-    console.log("🔑 用户表非空，跳过默认用户插入。");
+    console.log("User table is not empty, skipping default user insertion.");
   }
 
-  // 3. 插入菜单数据
+  // 3. Insert menu data
   const insertMenuTransaction = db.transaction(() => {
     for (const cat of menuData) {
       const info = insertCategory.run(cat.category);
@@ -232,13 +233,13 @@ async function initializeData() {
   insertMenuTransaction();
 }
 
-// 运行初始化函数
+// Run initialization function
 initializeData()
   .then(() => {
-    console.log("✅ 数据库初始化完成！");
+    console.log("Database initialization complete!");
     db.close();
   })
   .catch((err) => {
-    console.error("❌ 初始化失败:", err);
+    console.error("Initialization failed:", err);
     db.close();
   });

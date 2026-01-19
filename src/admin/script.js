@@ -1,8 +1,8 @@
-// 全局应用状态
+// Global Application State
 const state = {
   categories: [],
   products: [],
-  cart: [], // 结构: { id, name, price, options: [], count, categoryName, categoryId }
+  cart: [], // Structure: { id, name, price, options: [], count, categoryName, categoryId }
   currentCategoryId: null,
   orderListPage: 1,
   ordersPerPage: 10,
@@ -10,7 +10,7 @@ const state = {
   totalPages: 0,
 };
 
-// --- DOM 元素缓存 ---
+// --- DOM Elements Cache ---
 const elements = {
   categoryList: document.getElementById("category-list"),
   productGrid: document.getElementById("product-grid"),
@@ -37,7 +37,7 @@ function createEl(tag, className, textContent) {
   return el;
 }
 
-// --- 渲染函数 ---
+// --- Render Functions ---
 
 function renderCategories() {
   elements.categoryList.innerHTML = "";
@@ -60,14 +60,14 @@ function renderProducts() {
     const ops = JSON.parse(prod.options);
     const hasOptions = ops && ops.length > 0;
     const card = document.createElement("div");
-    // 添加一个 class 标记是否有选项，方便 CSS 和 JS 判断
+    // Add a class tag if there are options for CSS and JS logic
     card.className = hasOptions ? "product-card has-options" : "product-card";
 
     card.dataset.id = prod.id;
     card.dataset.name = prod.name;
     card.dataset.price = prod.price;
 
-    // 主信息 (商品名和价格)
+    // Main info (Product name and price)
     const nameDiv = document.createElement("div");
     nameDiv.className = "product-name";
     nameDiv.textContent = prod.name;
@@ -79,7 +79,7 @@ function renderProducts() {
     card.appendChild(nameDiv);
     card.appendChild(priceDiv);
 
-    // --- 核心修改：渲染冷/热选项按钮 ---
+    // --- Core Modification: Render Option Buttons (e.g., Hot/Ice) ---
     if (hasOptions) {
       const optionDiv = document.createElement("div");
       optionDiv.className = "product-option-buttons";
@@ -89,7 +89,7 @@ function renderProducts() {
         btn.className = "option-choice-btn";
         btn.textContent = choice;
         btn.dataset.action = "add-item-with-option";
-        btn.dataset.option = choice; // 存储选项值
+        btn.dataset.option = choice; // Store option value
 
         btn.addEventListener("click", handleOptionButton);
 
@@ -98,7 +98,7 @@ function renderProducts() {
 
       card.appendChild(optionDiv);
     }
-    // --- 选项按钮渲染结束 ---
+    // --- End Option Buttons Rendering ---
 
     elements.productGrid.appendChild(card);
   });
@@ -119,18 +119,18 @@ function renderCart() {
     const optionsText =
       item.options && item.options.length > 0 ? item.options.join(", ") : "";
 
-    // --- 1. 创建主内容行容器 (商品名 + 价格) ---
+    // --- 1. Create Main Content Row Container (Name + Price) ---
     const mainRowDiv = document.createElement("div");
     mainRowDiv.className = "item-main-row";
 
-    // 1a. 创建 item-info 容器
+    // 1a. Create item-info container
     const infoDiv = document.createElement("div");
     infoDiv.className = "item-info";
 
-    // 插入商品名称和数量
+    // Insert product name and quantity
     infoDiv.textContent = `${item.name} (x${item.count})`;
 
-    // 插入商品规格
+    // Insert product specifications/options
     if (optionsText) {
       const optionsSpan = document.createElement("span");
       optionsSpan.className = "item-options";
@@ -138,22 +138,22 @@ function renderCart() {
       infoDiv.appendChild(optionsSpan);
     }
 
-    // 1b. 插入价格
+    // 1b. Insert price
     const priceDiv = document.createElement("div");
     priceDiv.className = "item-price";
     priceDiv.textContent = `¥ ${(itemTotal / 100).toFixed(2)}`;
 
-    // 将 info 和 price 放入主行
+    // Append info and price to main row
     mainRowDiv.appendChild(infoDiv);
     mainRowDiv.appendChild(priceDiv);
 
     li.appendChild(mainRowDiv);
 
-    // --- 2. 创建控制按钮行容器 (新的一行) ---
+    // --- 2. Create Controls Row Container (New Row) ---
     const controlsRowDiv = document.createElement("div");
     controlsRowDiv.className = "item-controls-row";
 
-    // 2a. 插入控制按钮
+    // 2a. Insert control buttons
     const controlsDiv = document.createElement("div");
     controlsDiv.className = "item-controls";
 
@@ -187,7 +187,7 @@ function renderCart() {
   window.api.updateCart({ items: state.cart, total: total });
 }
 
-// --- 事件处理函数 ---
+// --- Event Handlers ---
 
 async function handleCategoryClick(event) {
   const btn = event.target.closest(".category-btn");
@@ -196,13 +196,13 @@ async function handleCategoryClick(event) {
   const newId = parseInt(btn.dataset.id);
   if (state.currentCategoryId === newId) return;
 
-  // 移除旧的 active 状态
+  // Remove old active status
   document.querySelector(".category-btn.active")?.classList.remove("active");
   btn.classList.add("active");
 
   state.currentCategoryId = newId;
 
-  // 从主进程获取该分类下的商品
+  // Get products under this category from main process
   const products = await window.api.getProducts(newId);
   state.products = products;
   renderProducts();
@@ -211,30 +211,30 @@ async function handleCategoryClick(event) {
 function handleOptionButton(event) {
   event.stopPropagation();
 
-  const btn = event.currentTarget; // 被点击的按钮
-  const option = btn.dataset.option; // 获取选项值 ('热' 或 '冷')
-  const card = btn.closest(".product-card"); // 查找父卡片以获取商品数据
+  const btn = event.currentTarget; // The clicked button
+  const option = btn.dataset.option; // Get option value ('Hot' or 'Ice')
+  const card = btn.closest(".product-card"); // Find parent card to get product data
 
   if (!card) return;
 
-  // --- Add to Cart Logic (复制并使用选项) ---
+  // --- Add to Cart Logic (Copy and use option) ---
 
   const categoryName =
     state.categories.find((c) => c.id === state.currentCategoryId)?.name ||
     "未分类";
 
-  // 构造商品对象
+  // Construct product object
   const product = {
     id: parseInt(card.dataset.id),
     name: card.dataset.name,
     price: parseInt(card.dataset.price),
-    options: [option], // 仅使用选中的选项
+    options: [option], // Use selected option only
     count: 1,
     categoryName: categoryName,
     categoryId: state.currentCategoryId,
   };
 
-  // 检查购物车是否有相同商品+相同规格的项 (精确匹配)
+  // Check if cart already has an item with same ID and same specifications (Exact match)
   const optionsKey = JSON.stringify(product.options);
   const existingIndex = state.cart.findIndex(
     (item) =>
@@ -254,7 +254,7 @@ function handleProductClick(event) {
   const card = event.target.closest(".product-card");
   if (!card) return;
 
-  // 理论上由于 stopPropagation，这个检查更多是安全保障
+  // Check safety due to stopPropagation
   if (card.classList.contains("has-options")) {
     return;
   }
@@ -263,18 +263,18 @@ function handleProductClick(event) {
     state.categories.find((c) => c.id === state.currentCategoryId)?.name ||
     "未分类";
 
-  // 构造商品对象 (无选项)
+  // Construct product object (No options)
   const product = {
     id: parseInt(card.dataset.id),
     name: card.dataset.name,
     price: parseInt(card.dataset.price),
-    options: [], // 选项为空
+    options: [], // Empty options
     count: 1,
     categoryName: categoryName,
     categoryId: state.currentCategoryId,
   };
 
-  // 检查购物车是否有相同商品+相同规格的项
+  // Check if cart has same product and specifications
   const optionsKey = JSON.stringify(product.options);
   const existingIndex = state.cart.findIndex(
     (item) =>
@@ -305,14 +305,14 @@ function handleCartControls(event) {
     if (item.count > 1) {
       item.count--;
     } else {
-      // 数量减到 0 时移除
+      // Remove item if count reaches 0
       state.cart.splice(index, 1);
     }
   } else if (action === "remove") {
     state.cart.splice(index, 1);
   }
 
-  // 重新渲染购物车
+  // Re-render cart
   renderCart();
 }
 
@@ -327,7 +327,7 @@ async function handleCheckout() {
   elements.checkoutBtn.disabled = true;
   elements.checkoutBtn.textContent = "处理中...";
 
-  // 调用主进程结账
+  // Call main process for checkout
   const result = await window.api.checkout({
     items: state.cart,
     total: total,
@@ -340,7 +340,7 @@ async function handleCheckout() {
       )}`
     );
 
-    // 调用打印小票
+    // Call print receipt
     const printResult = await window.api.printReceipt({
       items: state.cart,
       total: total,
@@ -348,12 +348,12 @@ async function handleCheckout() {
       createdAt: result.createdAt,
     });
     if (printResult.success) {
-      console.log("小票打印指令已发送。");
+      console.log("Receipt printing command sent.");
     } else {
-      console.error("小票打印失败。");
+      console.error("Receipt printing failed.");
     }
 
-    state.cart = []; // 清空本地购物车
+    state.cart = []; // Clear local cart
     renderCart();
   } else {
     alert(`结账失败: ${result.error || "数据库错误"}`);
@@ -363,12 +363,12 @@ async function handleCheckout() {
   elements.checkoutBtn.textContent = "立即结账";
 }
 
-// --- 报表导出逻辑 ---
+// --- Report Export Logic ---
 
 function formatDataForCsv(data) {
   if (!data || data.length === 0) return "";
 
-  // 确保数据中的数字以正确的格式显示
+  // Ensure numbers in data are displayed in the correct format
   const headers = [
     "订单号",
     "下单时间",
@@ -385,7 +385,7 @@ function formatDataForCsv(data) {
     const rowData = [
       row.order_no,
       new Date(row.created_at).toLocaleString("zh-CN"),
-      (row.total_amount / 100).toFixed(2), // 转换成分
+      (row.total_amount / 100).toFixed(2), // Convert to decimal from cents
       row.product_name,
       row.category_name,
       (row.unit_price / 100).toFixed(2),
@@ -393,7 +393,7 @@ function formatDataForCsv(data) {
       row.options_used ? JSON.parse(row.options_used).join(";") : "",
     ]
       .map((field) => `"${String(field).replace(/"/g, '""')}"`)
-      .join(","); // CSV安全处理
+      .join(","); // CSV security handling
 
     csvContent.push(rowData);
   });
@@ -426,7 +426,7 @@ async function handleExportCsv() {
     return;
   }
 
-  // 构造 ISO 时间字符串，确保包含全天的范围
+  // Construct ISO time strings ensuring the full day range is included
   const startISO = new Date(startDate + "T00:00:00.000Z").toISOString();
   const endISO = new Date(endDate + "T23:59:59.999Z").toISOString();
 
@@ -442,14 +442,14 @@ async function handleExportCsv() {
     const csv = formatDataForCsv(result.data);
     const filename = `pos_report_${startDate}_to_${endDate}.csv`;
 
-    // 替换 downloadCsv：调用主进程保存文件
+    // Replace downloadCsv: Call main process to save file
     const saveResult = await window.api.saveCsvFile(csv, filename); // <-- NEW IPC CALL
 
     if (saveResult.success) {
       alert(`流水导出成功！文件已保存到：\n${saveResult.path}`);
       elements.reportModal.style.display = "none";
     } else {
-      // 用户取消保存，或写入失败
+      // User cancelled save or write failed
       alert(`文件保存失败或已取消: ${saveResult.error || "用户取消"}`);
     }
   } else if (result.success && result.data.length === 0) {
@@ -463,7 +463,7 @@ function showOrderListView() {
   elements.mainDiv.style.display = "none";
   elements.managementView.style.display = "none";
   elements.orderListView.style.display = "block";
-  // 确保报告模式关闭
+  // Ensure report modal is closed
   elements.reportModal.style.display = "none";
 }
 
@@ -474,26 +474,26 @@ function showProductGridView() {
 }
 
 // ----------------------------------------------------
-// 订单列表处理函数
+// Order List Handler Functions
 // ----------------------------------------------------
 
-// 切换到订单列表视图并加载第一页
+// Switch to order list view and load first page
 function handleShowOrderHistory() {
   showOrderListView();
-  // 每次进入时，从第一页开始加载
+  // Load from page 1 every time the view is entered
   loadOrders(1);
 }
 
-// 异步加载订单数据
+// Asynchronously load order data
 async function loadOrders(page) {
   state.orderListPage = page;
 
-  // 创建并显示加载覆盖层
+  // Create and show loading overlay
   const overlay = document.createElement("div");
   overlay.className = "loading-overlay";
   overlay.textContent = "加载中...";
 
-  // 插入到 orderListView 中，覆盖其内容
+  // Insert into orderListView, covering its content
   elements.orderListView.appendChild(overlay);
 
   const limit = state.ordersPerPage;
@@ -501,17 +501,17 @@ async function loadOrders(page) {
 
   const result = await window.api.getPaginatedOrders({ limit, offset });
 
-  // 无论成功或失败，先移除覆盖层
+  // Remove overlay regardless of success or failure
   elements.orderListView.removeChild(overlay);
 
   if (result.success) {
     state.totalOrders = result.totalCount;
     state.totalPages = Math.ceil(result.totalCount / limit);
 
-    // 渲染新列表，这会替换旧内容
+    // Render new list, replacing old content
     renderOrderList(result.data);
   } else {
-    // 只在加载失败时显示错误消息，避免清空成功内容
+    // Show error message only on failure to avoid clearing successful content
     const errorEl = document.createElement("p");
     errorEl.className = "error-message";
     errorEl.textContent = `加载失败: ${result.error}`;
@@ -519,15 +519,15 @@ async function loadOrders(page) {
   }
 }
 
-// 渲染订单列表和分页控件
+// Render order list and pagination controls
 
-// 渲染分页按钮
+// Render pagination buttons
 function renderPaginationControls() {
   if (state.totalPages <= 1) return null;
 
   const paginationDiv = createEl("div", "pagination");
 
-  // --- 上一页 Button ---
+  // --- Previous Page Button ---
   const prevBtn = createEl("button", "page-btn", "上一页");
   prevBtn.dataset.page = state.orderListPage - 1;
   if (state.orderListPage === 1) {
@@ -535,7 +535,7 @@ function renderPaginationControls() {
   }
   paginationDiv.appendChild(prevBtn);
 
-  // --- 页面数字 Buttons ---
+  // --- Page Number Buttons ---
   for (let i = 1; i <= state.totalPages; i++) {
     const pageBtn = createEl("button", "page-btn", i);
     pageBtn.dataset.page = i;
@@ -545,7 +545,7 @@ function renderPaginationControls() {
     paginationDiv.appendChild(pageBtn);
   }
 
-  // --- 下一页 Button ---
+  // --- Next Page Button ---
   const nextBtn = createEl("button", "page-btn", "下一页");
   nextBtn.dataset.page = state.orderListPage + 1;
   if (state.orderListPage === state.totalPages) {
@@ -561,13 +561,13 @@ function renderPaginationControls() {
   );
   paginationDiv.appendChild(infoSpan);
 
-  return paginationDiv; // 返回 DOM 元素
+  return paginationDiv; // Returns DOM element
 }
 
 function renderOrderList(orders) {
   elements.orderListView.innerHTML = "";
 
-  // 构造：返回按钮和标题 (Header)
+  // Construct: Back button and Header
   const headerDiv = createEl("div", "order-list-header");
 
   const backBtn = createEl("button", "control-btn", "← 返回商品列表");
@@ -587,23 +587,23 @@ function renderOrderList(orders) {
 
   elements.orderListView.appendChild(headerDiv);
 
-  // 处理无数据情况
+  // Handle case with no data
   if (orders.length === 0) {
     elements.orderListView.appendChild(
       createEl("p", null, "没有找到任何订单记录。")
     );
 
-    // 绑定返回按钮事件 (即使没有数据，也要能返回)
+    // Bind back button event (allow returning even if no data)
     backBtn.addEventListener("click", showProductGridView);
     return;
   }
 
-  // 构造：订单列表表格
+  // Construct: Order list table
   const table = createEl("table", "order-table");
   const thead = createEl("thead");
   const tbody = createEl("tbody");
 
-  // 表头
+  // Table header
   const headerRow = createEl("tr");
   ["订单号", "总金额", "时间", "明细"].forEach((text) => {
     headerRow.appendChild(createEl("th", null, text));
@@ -611,7 +611,7 @@ function renderOrderList(orders) {
   thead.appendChild(headerRow);
   table.appendChild(thead);
 
-  // 表格内容
+  // Table content
   orders.forEach((order) => {
     const row = createEl("tr");
     row.dataset.orderId = order.id;
@@ -624,7 +624,7 @@ function renderOrderList(orders) {
       createEl("td", null, new Date(order.created_at).toLocaleString())
     );
 
-    // 明细按钮
+    // Detail button
     const detailCell = createEl("td");
     const detailBtn = createEl("button", "detail-btn", "查看");
     detailBtn.dataset.id = order.id;
@@ -636,13 +636,12 @@ function renderOrderList(orders) {
   table.appendChild(tbody);
   elements.orderListView.appendChild(table);
 
-  // 构造：分页控件
-  // 这里暂时使用原始的字符串拼接返回，但最好也进行重构。
+  // Construct: Pagination controls
   const paginationControls = renderPaginationControls();
   if (paginationControls) {
     elements.orderListView.appendChild(paginationControls);
 
-    // 绑定分页按钮事件 (直接 targeting the returned element)
+    // Bind pagination button events
     paginationControls.querySelectorAll(".page-btn").forEach((btn) => {
       btn.addEventListener("click", (e) => {
         const newPage = parseInt(e.target.dataset.page);
@@ -653,10 +652,10 @@ function renderOrderList(orders) {
     });
   }
 
-  // 绑定事件监听器：返回按钮
+  // Bind event listener: back button
   backBtn.addEventListener("click", showProductGridView);
 
-  // 绑定明细按钮
+  // Bind detail buttons
   elements.orderListView.querySelectorAll(".detail-btn").forEach((btn) => {
     btn.addEventListener("click", (e) => {
       const orderId = parseInt(e.target.dataset.id);
@@ -666,7 +665,7 @@ function renderOrderList(orders) {
 }
 
 async function showOrderDetailModal(orderId) {
-  // 2. 异步获取数据
+  // 2. Asynchronously fetch data
   const result = await window.api.getOrderDetails(orderId);
 
   if (!result.success || !result.data) {
@@ -678,26 +677,26 @@ async function showOrderDetailModal(orderId) {
 
   const orderData = result.data;
 
-  // 3. 构建模态框的 DOM 结构 (backdrop + content)
+  // 3. Build modal DOM structure (backdrop + content)
 
-  // Backdrop: 覆盖整个屏幕，用于关闭
+  // Backdrop: covers screen for closing
   const modal = document.createElement("div");
   modal.className = "modal-backdrop";
   modal.id = "order-detail-modal";
 
-  // Content Box: 实际的弹窗内容
+  // Content Box: actual popup content
   const contentBox = document.createElement("div");
   contentBox.className = "modal-content";
 
-  // 4. 渲染订单明细
+  // 4. Render order details
   contentBox.appendChild(renderOrderDetails(orderData));
 
-  // 5. 添加关闭按钮
+  // 5. Add close button
   const closeBtn = createEl("button", "modal-close-btn", "关闭");
-  // 点击关闭按钮或点击背景时关闭模态框
+  // Close modal on button click or backdrop click
   closeBtn.onclick = () => document.body.removeChild(modal);
 
-  // 点击背景时关闭
+  // Close on backdrop click
   modal.onclick = (e) => {
     if (e.target === modal) {
       document.body.removeChild(modal);
@@ -707,7 +706,7 @@ async function showOrderDetailModal(orderId) {
   contentBox.appendChild(closeBtn);
   modal.appendChild(contentBox);
 
-  // 6. 插入到 Body 并显示
+  // 6. Insert into body and display
   document.body.appendChild(modal);
 }
 
@@ -715,7 +714,7 @@ function renderOrderDetails(order) {
   const container = document.createElement("div");
   container.className = "order-detail-container";
 
-  // --- Header Info (订单号, 时间) ---
+  // --- Header Info (Order No, Time) ---
   container.appendChild(createEl("h3", null, `订单号: ${order.order_no}`));
   container.appendChild(
     createEl(
@@ -726,7 +725,7 @@ function renderOrderDetails(order) {
   );
   container.appendChild(createEl("hr"));
 
-  // --- Items Table (商品列表) ---
+  // --- Items Table (Product List) ---
   const table = createEl("table", "order-items-table");
 
   // Table Header
@@ -743,7 +742,7 @@ function renderOrderDetails(order) {
   order.items.forEach((item) => {
     const row = createEl("tr");
     const itemTotal = item.unit_price * item.quantity;
-    // 安全地显示规格，防止 XSS
+    // Safely display specifications to prevent XSS
     const optionsText = item.options.length > 0 ? item.options.join(", ") : "—";
 
     row.appendChild(createEl("td", "item-name", item.product_name));
@@ -776,15 +775,15 @@ function renderOrderDetails(order) {
 }
 
 function showProductManagementView() {
-  // 隐藏其他视图
+  // Hide other views
   elements.mainDiv.style.display = "none";
   elements.orderListView.style.display = "none";
-  // 显示商品管理视图
+  // Show product management view
   elements.managementView.style.display = "block";
 }
 
 // ----------------------------------------------------
-// 商品管理处理函数
+// Product Management Handler Functions
 // ----------------------------------------------------
 function handleShowProductManagement() {
   showProductManagementView();
@@ -801,25 +800,25 @@ async function handleCategoryDelete(e) {
     .closest(".category-item")
     .querySelector(".category-name").textContent;
 
-  // 提示信息应包含将要删除的内容，警告用户会丢失商品。
+  // Confirmation message warns the user about lost products
   const confirmationMessage =
     `确认删除分类 "${categoryName}" 吗？\n\n` +
     `此操作将永久删除此分类及该分类下的所有商品，数据无法恢复！`;
 
   if (!confirm(confirmationMessage)) {
-    // 用户点击了“取消”
-    console.log(`用户取消了删除分类 ID: ${categoryId} 的操作。`);
+    // User clicked "Cancel"
+    console.log(`User cancelled deletion of Category ID: ${categoryId}.`);
     return;
   }
 
-  // 1. 调用 IPC 接口执行删除操作
+  // 1. Call IPC interface to perform deletion
   const result = await window.api.deleteCategory(categoryId);
 
   if (result.success) {
     const count = result.deletedProductsCount;
     let message = `分类 "${categoryName}" 删除成功！`;
 
-    // 2. 显示删除结果的反馈（这里继续使用 alert，仅用于反馈结果）
+    // 2. Show feedback of deletion results
     if (count > 0) {
       message += `\n已同时删除了 ${count} 个关联商品。`;
     } else {
@@ -828,7 +827,7 @@ async function handleCategoryDelete(e) {
 
     alert(message);
 
-    // 3. 刷新界面
+    // 3. Refresh interface
     renderProductManagementInterface();
   } else {
     alert(`删除分类失败: ${result.error}`);
@@ -836,16 +835,15 @@ async function handleCategoryDelete(e) {
 }
 
 async function renderProductManagementInterface() {
-  // 1. 设置加载提示 (只写一次 DOM)
-  // 保持加载提示，但不使用 innerHTML 清空，而是使用更轻量的方式
+  // 1. Set loading indicator (write DOM once)
   elements.managementView.innerHTML =
     '<button id="back-to-products-btn" class="control-btn">← 返回商品列表</button><h2>商品和分类管理</h2><p id="loading-message">加载中...</p>';
 
-  // 获取数据 (这是耗时且异步的操作)
+  // Fetch data (time-consuming asynchronous operation)
   const result = await window.api.getAllProductsAndCategories();
 
   if (!result.success) {
-    // 如果失败，只更新错误提示
+    // Update error message on failure
     elements.managementView.querySelector(
       "#loading-message"
     ).textContent = `加载数据失败: ${result.error}`;
@@ -854,37 +852,35 @@ async function renderProductManagementInterface() {
 
   const { categories, products } = result.data;
 
-  // 2. 渲染内容到 DocumentFragment (性能优化)
+  // 2. Render content to DocumentFragment for performance optimization
   const fragment = document.createDocumentFragment();
 
-  // 标题和返回按钮
+  // Header and back button
   const headerHtml =
     '<button id="back-to-products-btn" class="control-btn">← 返回商品列表</button><h2>商品和分类管理</h2>';
   const headerContainer = document.createElement("div");
   headerContainer.innerHTML = headerHtml;
   fragment.appendChild(headerContainer);
 
-  // 渲染分类和商品区域
+  // Render category and product areas
   const categoryArea = renderCategoryManagementList(categories);
   const productArea = renderProductManagementTable(products, categories);
 
   fragment.appendChild(categoryArea);
   fragment.appendChild(productArea);
 
-  // 3. 替换内容
-  // 清空旧内容
+  // 3. Replace content
   elements.managementView.innerHTML = "";
-  // 写入新内容
   elements.managementView.appendChild(fragment);
 
-  // 4. 绑定事件
+  // 4. Bind events
   bindManagementEvents();
 }
 
 function renderCategoryManagementList(categories) {
   const container = createEl("div", "management-section");
 
-  // 标题和新增按钮
+  // Title and Add button
   const header = createEl("div", "management-header");
   header.appendChild(
     createEl("h3", null, `分类管理 (${categories.length} 个)`)
@@ -894,7 +890,7 @@ function renderCategoryManagementList(categories) {
   header.appendChild(addBtn);
   container.appendChild(header);
 
-  // 分类列表
+  // Category list
   const listDiv = createEl("div", "category-management-list");
 
   categories.forEach((c) => {
@@ -930,7 +926,7 @@ function renderCategoryManagementList(categories) {
 function renderProductManagementTable(products, categories) {
   const container = createEl("div", "management-section");
 
-  // 标题和新增按钮
+  // Title and Add button
   const header = createEl("div", "management-header");
   header.appendChild(createEl("h3", null, `商品管理 (${products.length} 个)`));
   const addBtn = createEl("button", null, "✚ 新增商品");
@@ -938,19 +934,19 @@ function renderProductManagementTable(products, categories) {
   header.appendChild(addBtn);
   container.appendChild(header);
 
-  // 表格主体
+  // Table body
   const table = createEl("table", "product-management-table");
   const thead = createEl("thead");
   const tbody = createEl("tbody");
 
-  // 表头
+  // Table headers
   const headers = ["ID", "分类", "商品名", "价格 (元)", "规格", "操作"];
   const headerRow = createEl("tr");
   headers.forEach((text) => headerRow.appendChild(createEl("th", null, text)));
   thead.appendChild(headerRow);
   table.appendChild(thead);
 
-  // 表格内容
+  // Table content
   products.forEach((p) => {
     const row = createEl("tr");
     row.dataset.id = p.id;
@@ -959,7 +955,7 @@ function renderProductManagementTable(products, categories) {
     const categoryName = category ? category.name : "未分类";
     const priceDisplay = (p.price / 100).toFixed(2);
 
-    // 尝试解析规格，并安全显示
+    // Parse specifications safely
     let optionsText = "";
     try {
       const options = JSON.parse(p.options || "[]");
@@ -974,7 +970,7 @@ function renderProductManagementTable(products, categories) {
     row.appendChild(createEl("td", null, priceDisplay));
     row.appendChild(createEl("td", "product-options-cell", optionsText));
 
-    // 操作单元格
+    // Action cell
     const actionsCell = createEl("td", "action-cell");
     const editBtn = createEl("button", "edit-product-btn danger-btn", "编辑");
     editBtn.dataset.id = p.id;
@@ -998,14 +994,14 @@ function renderProductManagementTable(products, categories) {
 }
 
 /**
- *  模态框辅助函数：显示分类编辑/新增表单
- * @param {object | null} category - 待编辑的分类对象，null 表示新增
+ * Modal helper: Show category edit/add form
+ * @param {object | null} category - category object to edit, null for add
  */
 async function onEditCategory(category) {
   const result = await window.api.openCategoryModal(category);
   if (!result.success) return;
 
-  await window.api.updateCategory(result); // 你的业务逻辑
+  await window.api.updateCategory(result); 
   renderProductManagementInterface();
 }
 
@@ -1018,15 +1014,14 @@ async function onAddCategory() {
 }
 
 /**
- *  模态框辅助函数：显示商品编辑/新增表单 (简化版)
- *  完整的实现需要获取所有分类供选择，并处理 options 数组
- * @param {object | null} product - 待编辑的商品对象，null 表示新增
+ * Modal helper: Show product edit/add form
+ * @param {object | null} product - product object to edit, null for add
  */
 async function onEditProduct(data) {
   const result = await window.api.openProductModal(data);
   if (!result.success) return;
 
-  await window.api.updateProduct(result.data); // 你的业务逻辑
+  await window.api.updateProduct(result.data); 
   renderProductManagementInterface();
 }
 
@@ -1049,7 +1044,7 @@ async function handleProductDelete(e) {
 
   if (result.success) {
     alert("商品删除成功！");
-    renderProductManagementInterface(); // 刷新列表
+    renderProductManagementInterface(); // Refresh list
   } else {
     alert(`商品删除失败：${result.error}`);
   }
@@ -1065,17 +1060,17 @@ function bindManagementEvents() {
       showProductGridView();
     });
 
-  // 1. 分类删除事件 (重点)
+  // 1. Category deletion event
   view.querySelectorAll(".delete-category-btn").forEach((btn) => {
     btn.addEventListener("click", handleCategoryDelete);
   });
 
-  // 2. 商品删除事件 (简单删除)
+  // 2. Product deletion event
   view.querySelectorAll(".delete-product-btn").forEach((btn) => {
     btn.addEventListener("click", handleProductDelete);
   });
 
-  // 3. 其它事件 (占位，待实现模态框逻辑)
+  // 3. Other events
   view
     .querySelector("#add-category-btn")
     .addEventListener("click", () => onAddCategory());
@@ -1084,7 +1079,7 @@ function bindManagementEvents() {
     .addEventListener("click", () => onAddProduct());
   view.querySelectorAll(".edit-category-btn").forEach((btn) => {
     btn.addEventListener("click", (e) => {
-      // 从 data-* 属性获取数据并传入模态框
+      // Get data from data-* attributes and pass to modal
       onEditCategory({
         id: parseInt(e.target.dataset.id),
         name: e.target.dataset.name,
@@ -1105,40 +1100,40 @@ function bindManagementEvents() {
 }
 
 /**
- * 异步加载最新的商品和分类数据，更新 state，并渲染主 POS 界面。
+ * Asynchronously load latest product and category data, update state, and render POS.
  */
 async function loadDataAndRenderPOS() {
   try {
-    // 1. 调用 IPC 接口获取最新数据
+    // 1. Call IPC interface to get latest data
     const result = await window.api.getInitialData();
 
     if (!result.success) {
-      console.error("加载初始数据失败:", result.error);
+      console.error("Failed to load initial data:", result.error);
       alert("加载商品数据失败，请检查数据库连接。");
       return;
     }
 
-    // 2. 更新全局 state
+    // 2. Update global state
     state.categories = result.categories;
     state.products = result.products;
 
-    // 确保 currentCategoryId 仍然有效或指向第一个分类
+    // Ensure currentCategoryId is valid or points to first category
     if (result.categories.length > 0) {
       state.currentCategoryId = result.categories[0].id;
     }
 
-    // 3. 渲染主 POS 界面
+    // 3. Render POS interface
     renderCategories();
     renderProducts();
   } catch (error) {
-    console.error("加载主界面数据时发生错误:", error);
+    console.error("Error loading main interface data:", error);
   }
 }
 
-// --- 初始化与监听 ---
+// --- Initialization and Listening ---
 
 async function init() {
-  // 绑定事件监听器 (使用事件委托)
+  // Bind event listeners using event delegation
   elements.categoryList.addEventListener("click", handleCategoryClick);
   elements.productGrid.addEventListener("click", handleProductClick);
   elements.cartList.addEventListener("click", handleCartControls);
@@ -1152,7 +1147,7 @@ async function init() {
     handleShowProductManagement
   );
 
-  // 报表 Modal 监听
+  // Report Modal listeners
   elements.showReportBtn.addEventListener("click", () => {
     elements.reportModal.style.display = "flex";
   });
@@ -1161,12 +1156,12 @@ async function init() {
   });
   elements.exportCsvBtn.addEventListener("click", handleExportCsv);
 
-  // 首次加载数据
+  // Initial data load
   loadDataAndRenderPOS();
 }
 
 function setupLogin() {
-  // 定义 DOM 元素
+  // Define DOM elements
   const loginOverlay = document.getElementById("login-overlay");
   const appContainer = document.getElementById("app-container");
   const loginBtn = document.getElementById("login-btn");
@@ -1174,16 +1169,16 @@ function setupLogin() {
   const passwordInput = document.getElementById("password");
   const errorMessageEl = document.getElementById("login-error-message");
 
-  // 绑定事件
+  // Bind events
   loginBtn.addEventListener("click", handleLogin);
-  // 允许按回车键登录
+  // Allow login on Enter key press
   passwordInput.addEventListener("keypress", (e) => {
     if (e.key === "Enter") {
       handleLogin();
     }
   });
 
-  // 登录处理函数
+  // Login handler function
   async function handleLogin() {
     const username = usernameInput.value;
     const password = passwordInput.value;
@@ -1199,14 +1194,14 @@ function setupLogin() {
     const result = await window.api.authenticate({ username, password });
 
     if (result.success) {
-      // 登录成功：隐藏登录层，显示应用主内容
+      // Login success: hide overlay and show app content
       loginOverlay.style.display = "none";
       appContainer.style.display = "flex";
 
       init();
     } else {
       errorMessageEl.textContent = result.error;
-      passwordInput.value = ""; // 清空密码输入框
+      passwordInput.value = ""; // Clear password input
       loginBtn.disabled = false;
     }
   }

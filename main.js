@@ -18,23 +18,23 @@ let customerWin = null;
 function createWindows() {
   const displays = screen.getAllDisplays();
 
-  // 1. 创建员工主窗口
+  // 1. Create main admin/staff window
   adminWin = new BrowserWindow({
     width: 1024,
     height: 768,
-    // 性能优化：禁用硬件加速 (Win 7 老机器可能需要)
+    // Performance optimization: Disable hardware acceleration (may be needed for older Win 7 machines)
     // webPreferences: { preload: path.join(__dirname, 'preload.js'), webSecurity: true, contextIsolation: true, sandbox: false, disableHtml5MediaPlayback: true, scrollBounce: false }
     webPreferences: { preload: path.join(__dirname, "preload.js") },
   });
   adminWin.loadFile("src/admin/index.html");
 
-  // 2. 检测双屏：如果有第二个屏幕，创建客显窗口
+  // 2. Dual-screen detection: If a second screen exists, create the customer display window
   if (displays.length > 1) {
     const externalDisplay =
       displays.find((display) => display.bounds.x !== 0) || displays[1];
 
     customerWin = new BrowserWindow({
-      x: externalDisplay.bounds.x, // 使用外部显示器的起始坐标
+      x: externalDisplay.bounds.x, // Use external display coordinates
       y: externalDisplay.bounds.y,
       width: externalDisplay.bounds.width,
       height: externalDisplay.bounds.height,
@@ -65,7 +65,7 @@ function openCategoryModal(data) {
 
     modal.loadFile("src/components/category-modal/index.html");
 
-    // 数据传入 modal
+    // Pass data to modal
     modal.webContents.once("did-finish-load", () => {
       modal.webContents.send("init-category-modal", data);
       // modal.show();
@@ -79,13 +79,13 @@ function openCategoryModal(data) {
       `
         )
         .then((contentHeight) => {
-          modal.setSize(450, contentHeight + 40); // 内容加一点 margin
+          modal.setSize(450, contentHeight + 40); // Add margin to content height
           modal.center();
           modal.show();
         });
     });
 
-    // modal 返回数据
+    // Return data from modal
     ipcMain.once("close-category-modal", (event, result) => {
       resolve(result);
       modal.close();
@@ -111,7 +111,7 @@ function openProductModal(data) {
 
     modal.loadFile("src/components/product-modal/index.html");
 
-    // 数据传入 modal
+    // Pass data to modal
     modal.webContents.once("did-finish-load", () => {
       modal.webContents.send("init-product-modal", data);
       // modal.show();
@@ -126,13 +126,13 @@ function openProductModal(data) {
       `
         )
         .then((contentHeight) => {
-          modal.setSize(450, contentHeight + 80); // 内容加一点 margin
+          modal.setSize(450, contentHeight + 80); // Add margin to content height
           modal.center();
           modal.show();
         });
     });
 
-    // modal 返回数据
+    // Return data from modal
     ipcMain.once("close-product-modal", (event, result) => {
       resolve(result);
       modal.close();
@@ -142,12 +142,12 @@ function openProductModal(data) {
 
 app.whenReady().then(() => {
   log("Database User Data Path:", app.getPath("userData"));
-  // CRITICAL: 数据库模块必须在 app 就绪后加载，以确保 app.getPath('userData') 可用
+  // CRITICAL: Database module must be loaded after app is ready to ensure app.getPath('userData') is available
   const db = require("./database/db");
 
   createWindows();
 
-  // --- IPC 通信逻辑 ---
+  // --- IPC Communication Logic ---
   ipcMain.handle("open-category-modal", async (event, payload) => {
     return await openCategoryModal(payload);
   });
@@ -156,12 +156,12 @@ app.whenReady().then(() => {
     return await openProductModal(payload);
   });
 
-  // 响应：获取初始化数据 (UNCHANGED)
+  // Response: Get initial data
   ipcMain.handle("get-initial-data", () => {
-    log("[MAIN] 收到获取初始化数据的请求.");
+    log("[MAIN] Received request for initial data.");
     try {
       const categories = db.getAllCategories();
-      log(`[MAIN] 数据库返回 ${categories.length} 个类别.`);
+      log(`[MAIN] Database returned ${categories.length} categories.`);
       const cateId = categories && categories.length ? categories[0].id : 1;
       return {
         success: true,
@@ -169,47 +169,47 @@ app.whenReady().then(() => {
         products: db.getProducts(cateId),
       };
     } catch (e) {
-      console.error("[MAIN] 数据库查询失败:", e);
-      // 返回一个空数组，避免应用崩溃
+      console.error("[MAIN] Database query failed:", e);
+      // Return empty arrays to prevent app crash
       return { success: false, error: e, categories: [], products: [] };
     }
   });
 
-  // 响应：切换分类 (UNCHANGED)
+  // Response: Switch category
   ipcMain.handle("get-products", (event, catId) => {
     return db.getProducts(catId);
   });
 
-  // 核心：购物车更新 -> 同步给客显 (UNCHANGED)
+  // Core: Cart update -> Sync to customer display
   ipcMain.on("cart-update", (event, cartData) => {
     if (customerWin) {
       customerWin.webContents.send("sync-cart", cartData);
     }
   });
 
-  // 核心：结账 (UPDATED: 适应新的 createOrder(items, totalAmount) 签名)
+  // Core: Checkout (Adapts to createOrder(items, totalAmount) signature)
   ipcMain.handle("checkout", async (event, { items, total }) => {
     try {
-      // db.createOrder 现在需要 items (商品详情) 和 total (总金额)
+      // db.createOrder now requires items (details) and total (amount)
       const result = db.createOrder(items, total);
 
       if (result.success) {
-        // 成功后清空客显
+        // Clear customer display on success
         if (customerWin) {
           customerWin.webContents.send("sync-cart", { items: [], total: 0 });
         }
       }
-      return result; // 返回订单号等信息给渲染进程
+      return result; // Return order number etc. to renderer process
     } catch (e) {
       console.error("Checkout failed:", e);
       return { success: false, error: e.message };
     }
   });
 
-  // 新增：导出流水报表
+  // New: Export transaction reports
   ipcMain.handle("get-reports", async (event, { startDate, endDate }) => {
     try {
-      // db.getReports 返回扁平化的交易记录
+      // db.getReports returns flattened transaction records
       return { success: true, data: db.getReports(startDate, endDate) };
     } catch (e) {
       console.error("Report generation failed:", e);
@@ -217,37 +217,37 @@ app.whenReady().then(() => {
     }
   });
 
-  // 响应：处理保存 CSV 文件的请求
+  // Response: Handle request to save CSV file
   ipcMain.handle(
     "save-csv-file",
     async (event, csvContent, defaultFilename) => {
-      // 1. 弹出保存对话框，让用户选择文件路径
+      // 1. Show save dialog to let user choose file path
       const { filePath } = await dialog.showSaveDialog({
-        title: "保存 POS 交易报告",
-        defaultPath: path.join(app.getPath("downloads"), defaultFilename), // 默认在下载目录
-        filters: [{ name: "CSV 文件", extensions: ["csv"] }],
+        title: "Save POS Transaction Report",
+        defaultPath: path.join(app.getPath("downloads"), defaultFilename), // Default to downloads directory
+        filters: [{ name: "CSV Files", extensions: ["csv"] }],
       });
 
       if (!filePath) {
-        // 用户取消了保存操作
+        // User cancelled save operation
         return { success: false, error: "User cancelled save dialog" };
       }
 
-      // 2. 将 CSV 内容写入用户选择的路径
+      // 2. Write CSV content to chosen path
       try {
-        // 写入文件，使用 utf-8 编码，确保中文不乱码
+        // Write file with utf-8 encoding
         fs.writeFileSync(filePath, csvContent, "utf-8");
 
-        log(`[MAIN] 报告成功保存到: ${filePath}`);
+        log(`[MAIN] Report successfully saved to: ${filePath}`);
         return { success: true, path: filePath };
       } catch (error) {
-        console.error(`[MAIN] 文件写入失败: ${error}`);
+        console.error(`[MAIN] File write failed: ${error}`);
         return { success: false, error: error.message };
       }
     }
   );
 
-  // 分页获取订单列表
+  // Paginated order list retrieval
   ipcMain.handle("get-paginated-orders", async (event, { limit, offset }) => {
     try {
       const result = db.getPaginatedOrders(limit, offset);
@@ -258,35 +258,35 @@ app.whenReady().then(() => {
         totalCount: result.totalCount,
       };
     } catch (error) {
-      console.error("获取分页订单失败:", error);
+      console.error("Failed to retrieve paginated orders:", error);
       return { success: false, error: error.message };
     }
   });
 
-  // 获取单个订单明细
+  // Get individual order details
   ipcMain.handle("get-order-details", async (event, orderId) => {
     try {
       const order = db.getOrderDetails(orderId);
 
       if (!order) {
-        return { success: false, error: "订单未找到" };
+        return { success: false, error: "Order not found" };
       }
 
       return { success: true, data: order };
     } catch (error) {
-      console.error(`获取订单 ${orderId} 明细失败:`, error);
+      console.error(`Failed to retrieve details for order ${orderId}:`, error);
       return { success: false, error: error.message };
     }
   });
 
-  // print
+  // Receipt Printing
   ipcMain.handle("print-receipt", async (event, orderData) => {
     if (!orderData || !orderData.items || orderData.items.length === 0) {
-      return { success: false, error: "缺少有效的订单数据" };
+      return { success: false, error: "Missing valid order data" };
     }
 
     let printWindow = new BrowserWindow({
-      show: false, // 隐藏窗口
+      show: false, // Hidden window
       width: 400,
       height: 800,
       webPreferences: {
@@ -298,7 +298,7 @@ app.whenReady().then(() => {
     const receiptPath = path.join(__dirname, "src/receipt/receipt.html");
     await printWindow.loadFile(receiptPath);
 
-    // 等待页面完全渲染
+    // Wait for page to finish rendering
     await printWindow.webContents.executeJavaScript(`
     new Promise((resolve) => {
       function tryRender() {
@@ -312,20 +312,20 @@ app.whenReady().then(() => {
     });
   `);
 
-    // 注入订单数据并触发渲染
+    // Inject order data and trigger rendering
     await printWindow.webContents.executeJavaScript(`
     window.renderReceipt(${JSON.stringify(orderData)});
   `);
 
-    // 执行打印
-    const printerName = "GP-C80 Series"; // Win7 热敏打印机名称，可含空格
+    // Execute printing
+    const printerName = "GP-C80 Series"; // Thermal printer name
     const result = await printWindow.webContents.print({
       silent: true,
       printBackground: true,
       deviceName: "",
     });
 
-    // 关闭打印窗口
+    // Close printing window
     setTimeout(() => {
       printWindow.close();
       printWindow = null;
@@ -334,37 +334,37 @@ app.whenReady().then(() => {
     return { success: process.platform === "win32" ? result : true };
   });
 
-  // 用户认证
+  // User Authentication
   ipcMain.handle("authenticate", async (event, { username, password }) => {
     try {
       const user = db.getUserByUsername(username);
 
       if (!user) {
-        return { success: false, error: "用户名或密码错误" };
+        return { success: false, error: "Invalid username or password" };
       }
 
-      // bcrypt.compare 是异步操作
+      // bcrypt.compare is an asynchronous operation
       const isMatch = await bcrypt.compare(password, user.password_hash);
 
       if (isMatch) {
         return { success: true };
       } else {
-        // 密码不匹配
-        return { success: false, error: "用户名或密码错误" };
+        // Password mismatch
+        return { success: false, error: "Invalid username or password" };
       }
     } catch (e) {
-      console.error("认证过程中发生系统错误:", e);
-      return { success: false, error: "系统认证错误，请联系管理员" };
+      console.error("System error during authentication:", e);
+      return { success: false, error: "System authentication error, please contact admin" };
     }
   });
 
-  // 分类管理
+  // Category Management
   ipcMain.handle("list-categories", (event) => {
     try {
       const result = db.getAllCategories();
       return { success: !!result, data: result };
     } catch (error) {
-      console.error(`获取分类失败:`, error);
+      console.error(`Failed to retrieve categories:`, error);
       return { success: false, error: error.message };
     }
   });
@@ -380,13 +380,13 @@ app.whenReady().then(() => {
     try {
       return db.delCategory(id);
     } catch (error) {
-      // 捕获系统级错误或 db.js 未处理的异常
-      console.error(`删除分类 ${id} 失败:`, error);
+      // Catch system-level errors or unhandled exceptions from db.js
+      console.error(`Failed to delete category ${id}:`, error);
       return { success: false, error: error.message };
     }
   });
 
-  // 商品管理
+  // Product Management
   ipcMain.handle("list-products", (event) => {
     return db.getAllProductsAndCategories();
   });
@@ -406,7 +406,7 @@ app.whenReady().then(() => {
     return db.delProduct(id);
   });
 
-  // 其他 Electron 事件处理
+  // Other Electron event handling
   app.on("window-all-closed", () => {
     if (process.platform !== "darwin") {
       app.quit();

@@ -2,7 +2,7 @@ body {
   font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
   margin: 0;
   padding: 0;
-  background-color: #004d40; /* 深绿色背景，突出显示 */
+  background-color: #004d40; /* Dark green background for high contrast */
   color: white;
   height: 100vh;
   display: flex;
@@ -28,7 +28,7 @@ h1 {
   margin: 0;
 }
 
-/* 列表区 */
+/* Item List Area */
 #item-list-area {
   flex-grow: 1;
   overflow-y: auto;
@@ -79,7 +79,7 @@ h1 {
   text-align: center;
 }
 
-/* 底部总金额 (最重要) */
+/* Bottom Total Area (Critical) */
 #total-area {
   margin-top: 20px;
   padding: 20px;
@@ -96,7 +96,7 @@ h1 {
 }
 
 #customer-total {
-  font-size: 3em; /* 超大字体 */
+  font-size: 3em; /* Extra large font for visibility */
   font-weight: bold;
   color: white;
 }

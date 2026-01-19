@@ -18,7 +18,7 @@ window.api.onProductModalInit(async (data) => {
 
   titleEl.innerText = isEdit ? `编辑商品：${data.name}` : "新增商品";
 
-  // 渲染类别下拉框
+  // Render category dropdown options
   categorySelect.innerHTML = categories
     .map(
       (cat) =>
@@ -40,7 +40,7 @@ window.api.onProductModalInit(async (data) => {
     }
   }
 
-  // Win7 下 100% 有效的聚焦方式
+  // Reliable focus method for Windows 7 environments
   setTimeout(() => {
     nameInput.focus();
     nameInput.selectionStart = nameInput.selectionEnd = nameInput.value.length;

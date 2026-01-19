@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <title>小票打印模板</title>
     <style>
-      /* 针对热敏打印机宽度优化 */
+      /* Optimized for thermal printer width */
       body {
         width: 200px;
         font-size: 18px;
@@ -25,7 +25,7 @@
       }
 
       .header h3 {
-        margin: 5px 0; /* 标题上下间距 */
+        margin: 5px 0; /* Vertical spacing for title */
         padding: 0;
         font-size: 20px;
       }
@@ -38,8 +38,8 @@
 
       .separator {
         border-top: 1px dashed #000;
-        margin: 5px 0; /* 上下留白 */
-        width: 100%; /* 确保它跨满父容器宽度 */
+        margin: 5px 0; /* Margin around separator */
+        width: 100%; /* Ensure it spans the full container width */
       }
 
       .item-list {
@@ -51,8 +51,7 @@
       .item {
         display: grid;
         grid-template-columns: 1fr 30px;
-        gap: 3px;
-        /* 列之间的间距 */
+        gap: 3px; /* Gap between columns */
         margin-bottom: 10px;
       }
 
@@ -70,12 +69,12 @@
     <div id="receipt-content"></div>
 
     <script>
-      // 关键：这个函数接收主进程注入的数据并渲染
+      // CRITICAL: This function receives data injected by the main process and renders it
       window.renderReceipt = function (orderData) {
         const content = document.getElementById("receipt-content");
         let html = `
                 <div class="header">
-                    <h3>上引咖啡</h3>
+                    <h3>**咖啡</h3>
                     <p>订单号: ${orderData.orderNo}</p>
                     <p>日期: ${new Date(orderData.createdAt).toLocaleString(
                       "zh-CN"

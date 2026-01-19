@@ -1,90 +1,90 @@
 const { contextBridge, ipcRenderer } = require("electron");
 
 contextBridge.exposeInMainWorld("api", {
-  // 1. 数据获取 (ipcRenderer.invoke 用于需要等待主进程返回数据的操作)
+  // 1. Data Fetching (ipcRenderer.invoke is used for operations requiring a response from the main process)
   /**
-   * 获取初始数据 (分类和默认商品)
+   * Get initial data (Categories and default products)
    */
   getInitialData: () => ipcRenderer.invoke("get-initial-data"),
 
   /**
-   * 切换分类时获取商品列表
+   * Fetch product list when switching categories
    */
   getProducts: (catId) => ipcRenderer.invoke("get-products", catId),
 
-  // 历史订单分页列表
+  // Paginated list for order history
   getPaginatedOrders: (pagination) =>
     ipcRenderer.invoke("get-paginated-orders", pagination),
 
-  // 获取单个订单明细
+  // Get individual order details
   getOrderDetails: (orderId) =>
     ipcRenderer.invoke("get-order-details", orderId),
 
   /**
-   * 获取订单流水报表
-   * @param {string} startDate - ISO 格式的开始时间
-   * @param {string} endDate - ISO 格式的结束时间
+   * Fetch transaction report data
+   * @param {string} startDate - Start time in ISO format
+   * @param {string} endDate - End time in ISO format
    */
   getReports: (startDate, endDate) =>
     ipcRenderer.invoke("get-reports", { startDate, endDate }),
 
-  // 2. 命令/交互 (ipcRenderer.invoke 用于结账，需要返回结果)
+  // 2. Commands/Interactions (ipcRenderer.invoke used for checkout, requires a result)
   /**
-   * 提交结账，需要等待数据库操作完成
-   * @param {object} cartData - 包含 { items, total } 的对象
+   * Submit checkout and wait for database operation to complete
+   * @param {object} cartData - Object containing { items, total }
    */
   checkout: (cartData) => ipcRenderer.invoke("checkout", cartData),
 
-  // 3. 异步通知 (ipcRenderer.send 用于不关心返回结果的同步操作)
+  // 3. Asynchronous Notifications (ipcRenderer.send for operations where result is not tracked)
   /**
-   * 更新购物车状态，通知主进程同步给客显
-   * @param {object} cartData - 包含 { items, total } 的对象
+   * Update cart status and notify main process to sync with customer display
+   * @param {object} cartData - Object containing { items, total }
    */
   updateCart: (cartData) => ipcRenderer.send("cart-update", cartData),
 
-  // 暴露打印小票的新接口
+  // Interface for printing receipts
   printReceipt: (orderData) => ipcRenderer.invoke("print-receipt", orderData),
 
-  // 暴露保存文件的新接口
+  // Interface for saving files
   saveCsvFile: (csvContent, defaultFilename) =>
     ipcRenderer.invoke("save-csv-file", csvContent, defaultFilename),
 
-  // 认证接口
+  // Authentication interface
   authenticate: (credentials) =>
     ipcRenderer.invoke("authenticate", credentials),
 
-  // 4. 监听 (ipcRenderer.on 仅用于接收主进程推送的消息，如客显同步)
+  // 4. Listeners (ipcRenderer.on for receiving push messages from main process)
   /**
-   * 监听主进程推送的购物车同步消息 (用于客显端)
-   * @param {function} callback - 接收数据的回调函数
+   * Listen for cart synchronization messages (used by customer display)
+   * @param {function} callback - Callback function to receive data
    */
   onCartSync: (callback) => {
-    // 移除旧的监听器，防止重复注册
+    // Remove existing listeners to prevent duplicate registrations
     ipcRenderer.removeAllListeners("sync-cart");
-    // 注册新的监听器
+    // Register new listener
     ipcRenderer.on("sync-cart", (event, value) => callback(value));
   },
 
-  // 商品管理
+  // Product Management
   getAllProductsAndCategories: () => ipcRenderer.invoke("list-products"),
   getProductById: (id) => ipcRenderer.invoke("get-product", id),
   insertProduct: (pData) => ipcRenderer.invoke("add-product", pData),
   updateProduct: (pData) => ipcRenderer.invoke("edit-product", pData),
   deleteProduct: (id) => ipcRenderer.invoke("del-product", id),
 
-  // 分类管理
+  // Category Management
   getAllCategories: () => ipcRenderer.invoke("list-categories"),
   insertCategory: (cData) => ipcRenderer.invoke("add-category", cData),
   updateCategory: (cData) => ipcRenderer.invoke("edit-category", cData),
   deleteCategory: (id) => ipcRenderer.invoke("del-category", id),
 
-  // 分类窗口
+  // Category Modal
   openCategoryModal: (data) => ipcRenderer.invoke("open-category-modal", data),
   onCategoryModalInit: (callback) =>
     ipcRenderer.on("init-category-modal", (e, d) => callback(d)),
   closeCategoryModal: (data) => ipcRenderer.send("close-category-modal", data),
 
-  // 商品窗口
+  // Product Modal
   openProductModal: (data) => ipcRenderer.invoke("open-product-modal", data),
   onProductModalInit: (callback) =>
     ipcRenderer.on("init-product-modal", (e, d) => callback(d)),

@@ -7,7 +7,7 @@ window.api.onCategoryModalInit((data) => {
   const input = document.getElementById("category-name");
   if (isEdit) input.value = data.name;
 
-  // Win7 下 100% 有效的聚焦方式
+  // Reliable focus method for Windows 7 environments
   setTimeout(() => {
     input.focus();
     input.selectionStart = input.selectionEnd = input.value.length;
