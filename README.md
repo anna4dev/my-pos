@@ -7,7 +7,7 @@ A lightweight, legency support Point of Sale (POS) system designed for coffee sh
 - **Dual-Window Sync**: Real-time cart synchronization between the cashier admin and the customer-facing display.
 - **Thermal Printer Integration**: Automated receipt printing using HTML templates.
 - **Modular Management**: Easy management of products, categories, and inventory.
-- **Data Security**: Local storage using SQLite with optimized indexing for fast order history lookups.
+- **Data Security**: Local storage using SQLite with order history lookups.
 - **Reporting**: Export detailed sales reports to CSV format for business analysis.
 
 ## Installation & Setup
@@ -15,7 +15,6 @@ A lightweight, legency support Point of Sale (POS) system designed for coffee sh
 ### Prerequisites
 
 - Node.js (v16.x)
-- Windows Build Tools (for better-sqlite3 compilation)
 
 ### Steps
 
@@ -94,6 +93,32 @@ The system uses a relational SQLite database with the following structure:
 | `unit_price`   | INTEGER | Snapshot of price at time of sale |
 | `quantity`     | INTEGER | Number of items purchased         |
 | `options_used` | TEXT    | JSON string of selected options   |
+
+### `users` (Users Infos)
+
+| Column          | Type    | Description     |
+| :-------------- | :------ | :-------------- |
+| `id`            | INTEGER | Primary Key     |
+| `username`      | TEXT    | nickname        |
+| `password_hash` | TEXT    | encode password |
+
+## Development Roadmap (TODO)
+
+Future updates will follow this priority order:
+
+1.  **Refactoring & Modularization**
+
+    - [ ] Decouple the monolithic `admin.js` into functional ES modules (Orders, Management, Exports).
+    - [ ] Standardize UI components for reusability (Modal).
+
+2.  **Payment Integration**
+
+    - [ ] Support for hardware barcode scanners (Payment code scanning).
+    - [ ] Integration with payment gateway APIs and automated post-payment receipt printing.
+
+3.  **Multi-user Support**
+    - [ ] Refactor `orders` table to include `admin_id`.
+    - [ ] Implement a full User/Staff management system with role-based access control.
 
 ## License
 
