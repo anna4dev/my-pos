@@ -1,5 +1,7 @@
 # Coffee POS System (Electron + SQLite)
 
+![Main UI Screenshot](https://res.cloudinary.com/dzzr66tx3/image/upload/v1764916851/admin-main_bjjxgc.png)
+
 A lightweight, legency support Point of Sale (POS) system designed for coffee shops. Built with **Electron** and **Better-SQLite3**, it features a dual-screen display (Cashier & Customer) and local database management.
 
 ## Key Features
@@ -22,7 +24,7 @@ A lightweight, legency support Point of Sale (POS) system designed for coffee sh
 
    ```bash
    git clone https://github.com/anna4dev/my-pos.git
-   cd coffee-pos
+   cd my-pos
    ```
 
 2. **Install dependencies**
