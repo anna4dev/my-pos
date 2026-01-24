@@ -78,15 +78,15 @@ contextBridge.exposeInMainWorld("api", {
   updateCategory: (cData) => ipcRenderer.invoke("edit-category", cData),
   deleteCategory: (id) => ipcRenderer.invoke("del-category", id),
 
+  // modal
+  onModalInit: (callback) =>
+    ipcRenderer.on("modal-init-data", (event, data) => callback(data)),
+  notifyModalReady: () => ipcRenderer.send("modal-ready-request"),
+  sendCloseModal: (result) => ipcRenderer.send("close-modal-request", result),
+
   // Category Modal
   openCategoryModal: (data) => ipcRenderer.invoke("open-category-modal", data),
-  onCategoryModalInit: (callback) =>
-    ipcRenderer.on("init-category-modal", (e, d) => callback(d)),
-  closeCategoryModal: (data) => ipcRenderer.send("close-category-modal", data),
 
   // Product Modal
   openProductModal: (data) => ipcRenderer.invoke("open-product-modal", data),
-  onProductModalInit: (callback) =>
-    ipcRenderer.on("init-product-modal", (e, d) => callback(d)),
-  closeProductModal: (data) => ipcRenderer.send("close-product-modal", data),
 });

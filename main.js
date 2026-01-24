@@ -76,7 +76,7 @@ function openCategoryModal(data) {
           const height = document.body.scrollHeight;
           resolve(height);
         });
-      `
+      `,
         )
         .then((contentHeight) => {
           modal.setSize(450, contentHeight + 40); // Add margin to content height
@@ -123,7 +123,7 @@ function openProductModal(data) {
           console.log(height);
           resolve(height);
         });
-      `
+      `,
         )
         .then((contentHeight) => {
           modal.setSize(450, contentHeight + 80); // Add margin to content height
@@ -140,6 +140,56 @@ function openProductModal(data) {
   });
 }
 
+// abstruct modal opening
+async function openModalWithResult(
+  parentWin,
+  folderName,
+  width,
+  height,
+  payload,
+) {
+  const modal = new BrowserWindow({
+    width,
+    height,
+    parent: parentWin,
+    modal: true,
+    show: false,
+    frame: false,
+    webPreferences: {
+      preload: path.join(__dirname, "preload.js"),
+    },
+  });
+
+  modal.loadFile(
+    path.join(__dirname, `src/components/${folderName}/index.html`),
+  );
+
+  return new Promise((resolve) => {
+    // 1. init data for modal
+    modal.webContents.once("did-finish-load", () => {
+      modal.webContents.send("modal-init-data", payload);
+    });
+    ipcMain.once(`render-ready-${modal.id}`, () => {
+      modal.show(); // show modal when dom ready
+    });
+
+    // 2. listen to close signal
+    // ipcMain.once ensure destory window
+    const responseChannel = `modal-result-${modal.id}`;
+
+    ipcMain.once(responseChannel, (event, result) => {
+      resolve(result);
+      if (!modal.isDestroyed()) modal.close();
+    });
+
+    // 3. other case
+    modal.on("closed", () => {
+      ipcMain.removeAllListeners(responseChannel);
+      resolve({ success: false, msg: "Closed by user" });
+    });
+  });
+}
+
 app.whenReady().then(() => {
   log("Database User Data Path:", app.getPath("userData"));
   // CRITICAL: Database module must be loaded after app is ready to ensure app.getPath('userData') is available
@@ -148,12 +198,42 @@ app.whenReady().then(() => {
   createWindows();
 
   // --- IPC Communication Logic ---
+  ipcMain.on("modal-ready-request", (event) => {
+    const win = BrowserWindow.fromWebContents(event.sender);
+    if (win) {
+      // trigger createModal
+      ipcMain.emit(`render-ready-${win.id}`);
+    }
+  });
+
   ipcMain.handle("open-category-modal", async (event, payload) => {
-    return await openCategoryModal(payload);
+    // return await openCategoryModal(payload);
+    const parent = BrowserWindow.fromWebContents(event.sender);
+    return await openModalWithResult(
+      parent,
+      "category-modal",
+      450,
+      280,
+      payload,
+    );
   });
 
   ipcMain.handle("open-product-modal", async (event, payload) => {
-    return await openProductModal(payload);
+    // return await openProductModal(payload);
+    const parent = BrowserWindow.fromWebContents(event.sender);
+    return await openModalWithResult(
+      parent,
+      "product-modal",
+      450,
+      550,
+      payload,
+    );
+  });
+
+  ipcMain.on("close-modal-request", (event, result) => {
+    const win = BrowserWindow.fromWebContents(event.sender);
+    // trigger modal by id
+    ipcMain.emit(`modal-result-${win.id}`, event, result);
   });
 
   // Response: Get initial data
@@ -244,7 +324,7 @@ app.whenReady().then(() => {
         console.error(`[MAIN] File write failed: ${error}`);
         return { success: false, error: error.message };
       }
-    }
+    },
   );
 
   // Paginated order list retrieval
@@ -354,7 +434,10 @@ app.whenReady().then(() => {
       }
     } catch (e) {
       console.error("System error during authentication:", e);
-      return { success: false, error: "System authentication error, please contact admin" };
+      return {
+        success: false,
+        error: "System authentication error, please contact admin",
+      };
     }
   });
 

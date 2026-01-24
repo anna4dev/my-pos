@@ -1,20 +1,30 @@
 .modal {
-  background-color: white;
+  background-color: #fff;
   padding: 30px;
   border-radius: 8px;
+  min-width: 360px;
+  min-height: 250px;
+  box-sizing: border-box;
 }
 
 .modal h3 {
-  margin-top: 0;
-  margin-bottom: 20px;
-  border-bottom: 1px solid #eee;
+  margin: 0 0 20px 0;
   padding-bottom: 10px;
+  min-height: 37px;
+  border-bottom: 1px solid #eee;
+  visibility: hidden;
+}
+
+.modal-error {
+  color: #d32f2f;
+  min-height: 18px;
+  margin-bottom: 10px;
 }
 
 .modal label {
   display: block;
-  margin-top: 10px;
-  margin-bottom: 5px;
+  margin-top: 12px;
+  margin-bottom: 6px;
   font-weight: bold;
 }
 
@@ -22,7 +32,6 @@
 .modal select {
   width: 100%;
   padding: 10px;
-  margin-bottom: 15px;
   border: 1px solid #ccc;
   border-radius: 4px;
   box-sizing: border-box;
@@ -32,13 +41,13 @@
   display: flex;
   justify-content: flex-end;
   gap: 10px;
-  margin-top: 20px;
+  margin-top: 24px;
 }
 
 .primary-btn {
   background-color: #4caf50;
-  color: white;
-  padding: 10px 20px;
+  color: #fff;
+  padding: 8px 18px;
   border: none;
   border-radius: 4px;
   cursor: pointer;
@@ -47,7 +56,7 @@
 .secondary-btn {
   background-color: #f0f0f0;
   color: #333;
-  padding: 10px 20px;
+  padding: 8px 18px;
   border: 1px solid #ccc;
   border-radius: 4px;
   cursor: pointer;

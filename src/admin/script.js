@@ -238,7 +238,7 @@ function handleOptionButton(event) {
   const optionsKey = JSON.stringify(product.options);
   const existingIndex = state.cart.findIndex(
     (item) =>
-      item.id === product.id && JSON.stringify(item.options) === optionsKey
+      item.id === product.id && JSON.stringify(item.options) === optionsKey,
   );
 
   if (existingIndex !== -1) {
@@ -278,7 +278,7 @@ function handleProductClick(event) {
   const optionsKey = JSON.stringify(product.options);
   const existingIndex = state.cart.findIndex(
     (item) =>
-      item.id === product.id && JSON.stringify(item.options) === optionsKey
+      item.id === product.id && JSON.stringify(item.options) === optionsKey,
   );
 
   if (existingIndex !== -1) {
@@ -321,7 +321,7 @@ async function handleCheckout() {
 
   const total = state.cart.reduce(
     (sum, item) => sum + item.price * item.count,
-    0
+    0,
   );
 
   elements.checkoutBtn.disabled = true;
@@ -336,8 +336,8 @@ async function handleCheckout() {
   if (result.success) {
     alert(
       `结账成功！订单号: ${result.orderNo}. 总金额: ¥ ${(total / 100).toFixed(
-        2
-      )}`
+        2,
+      )}`,
     );
 
     // Call print receipt
@@ -557,7 +557,7 @@ function renderPaginationControls() {
   const infoSpan = createEl(
     "span",
     null,
-    `共 ${state.totalOrders} 条记录 / ${state.totalPages} 页`
+    `共 ${state.totalOrders} 条记录 / ${state.totalPages} 页`,
   );
   paginationDiv.appendChild(infoSpan);
 
@@ -578,7 +578,7 @@ function renderOrderList(orders) {
   const infoSpan = createEl(
     "span",
     null,
-    `共 ${state.totalOrders} 条记录 / ${state.totalPages} 页`
+    `共 ${state.totalOrders} 条记录 / ${state.totalPages} 页`,
   );
 
   headerDiv.appendChild(backBtn);
@@ -590,7 +590,7 @@ function renderOrderList(orders) {
   // Handle case with no data
   if (orders.length === 0) {
     elements.orderListView.appendChild(
-      createEl("p", null, "没有找到任何订单记录。")
+      createEl("p", null, "没有找到任何订单记录。"),
     );
 
     // Bind back button event (allow returning even if no data)
@@ -621,7 +621,7 @@ function renderOrderList(orders) {
     row.appendChild(createEl("td", null, order.order_no));
     row.appendChild(createEl("td", null, `¥ ${totalDisplay}`));
     row.appendChild(
-      createEl("td", null, new Date(order.created_at).toLocaleString())
+      createEl("td", null, new Date(order.created_at).toLocaleString()),
     );
 
     // Detail button
@@ -670,7 +670,7 @@ async function showOrderDetailModal(orderId) {
 
   if (!result.success || !result.data) {
     alert(
-      `加载订单 ${orderId} 失败: ${result.error || "订单不存在或加载错误"}`
+      `加载订单 ${orderId} 失败: ${result.error || "订单不存在或加载错误"}`,
     );
     return;
   }
@@ -720,8 +720,8 @@ function renderOrderDetails(order) {
     createEl(
       "p",
       null,
-      `创建时间: ${new Date(order.created_at).toLocaleString()}`
-    )
+      `创建时间: ${new Date(order.created_at).toLocaleString()}`,
+    ),
   );
   container.appendChild(createEl("hr"));
 
@@ -749,10 +749,10 @@ function renderOrderDetails(order) {
     row.appendChild(createEl("td", "item-options", optionsText));
     row.appendChild(createEl("td", "item-quantity", `x${item.quantity}`));
     row.appendChild(
-      createEl("td", "item-price", `¥ ${(item.unit_price / 100).toFixed(2)}`)
+      createEl("td", "item-price", `¥ ${(item.unit_price / 100).toFixed(2)}`),
     );
     row.appendChild(
-      createEl("td", "item-total", `¥ ${(itemTotal / 100).toFixed(2)}`)
+      createEl("td", "item-total", `¥ ${(itemTotal / 100).toFixed(2)}`),
     );
 
     tbody.appendChild(row);
@@ -766,8 +766,8 @@ function renderOrderDetails(order) {
     createEl(
       "strong",
       null,
-      `总计金额: ¥ ${(order.total_amount / 100).toFixed(2)}`
-    )
+      `总计金额: ¥ ${(order.total_amount / 100).toFixed(2)}`,
+    ),
   );
   container.appendChild(totalDiv);
 
@@ -844,9 +844,8 @@ async function renderProductManagementInterface() {
 
   if (!result.success) {
     // Update error message on failure
-    elements.managementView.querySelector(
-      "#loading-message"
-    ).textContent = `加载数据失败: ${result.error}`;
+    elements.managementView.querySelector("#loading-message").textContent =
+      `加载数据失败: ${result.error}`;
     return;
   }
 
@@ -883,7 +882,7 @@ function renderCategoryManagementList(categories) {
   // Title and Add button
   const header = createEl("div", "management-header");
   header.appendChild(
-    createEl("h3", null, `分类管理 (${categories.length} 个)`)
+    createEl("h3", null, `分类管理 (${categories.length} 个)`),
   );
   const addBtn = createEl("button", null, "✚ 新增分类");
   addBtn.id = "add-category-btn";
@@ -909,7 +908,7 @@ function renderCategoryManagementList(categories) {
     const deleteBtn = createEl(
       "button",
       "delete-category-btn danger-btn",
-      "删除"
+      "删除",
     );
     deleteBtn.dataset.id = c.id;
 
@@ -977,7 +976,7 @@ function renderProductManagementTable(products, categories) {
     const deleteBtn = createEl(
       "button",
       "delete-product-btn danger-btn",
-      "删除"
+      "删除",
     );
     deleteBtn.dataset.id = p.id;
 
@@ -1000,8 +999,8 @@ function renderProductManagementTable(products, categories) {
 async function onEditCategory(category) {
   const result = await window.api.openCategoryModal(category);
   if (!result.success) return;
-
-  await window.api.updateCategory(result); 
+  console.log(result);
+  await window.api.updateCategory(result.data);
   renderProductManagementInterface();
 }
 
@@ -1021,7 +1020,7 @@ async function onEditProduct(data) {
   const result = await window.api.openProductModal(data);
   if (!result.success) return;
 
-  await window.api.updateProduct(result.data); 
+  await window.api.updateProduct(result.data);
   renderProductManagementInterface();
 }
 
@@ -1140,11 +1139,11 @@ async function init() {
   elements.checkoutBtn.addEventListener("click", handleCheckout);
   elements.showOrderHistoryBtn.addEventListener(
     "click",
-    handleShowOrderHistory
+    handleShowOrderHistory,
   );
   elements.showManagementBtn.addEventListener(
     "click",
-    handleShowProductManagement
+    handleShowProductManagement,
   );
 
   // Report Modal listeners

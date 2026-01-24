@@ -1,76 +1,69 @@
-window.api.onProductModalInit(async (data) => {
-  const isEdit = !!data;
-  const categoriesResult = await window.api.getAllCategories();
-
-  if (!categoriesResult.success) {
-    alert("无法加载分类列表，请稍后再试。");
-    return;
+// product-modal.js
+class ProductModal extends BaseModal {
+  constructor() {
+    super({ apiName: "Product" });
+    this.inputs = {
+      category: document.getElementById("product-category-input"),
+      name: document.getElementById("product-name-input"),
+      price: document.getElementById("product-price-input"),
+      options: document.getElementById("product-options-input"),
+    };
   }
-  const categories = categoriesResult.data;
 
-  const titleEl = document.getElementById("modal-title");
-  const errorEl = document.getElementById("error");
+  async render(data) {
+    // 1. get options for select
+    const res = await window.api.getAllCategories();
+    if (!res.success) return alert("分类加载失败");
 
-  const categorySelect = document.getElementById("product-category-input");
-  const nameInput = document.getElementById("product-name-input");
-  const priceInput = document.getElementById("product-price-input");
-  const optionsInput = document.getElementById("product-options-input");
+    const categorySelect = this.inputs.category;
+    categorySelect.length = 0;
 
-  titleEl.innerText = isEdit ? `编辑商品：${data.name}` : "新增商品";
+    res.data.forEach((cat) => {
+      // new Option(text, value, defaultSelected, selected)
+      const isSelected = this.isEdit && data.category_id === cat.id;
+      categorySelect.add(new Option(cat.name, cat.id, isSelected, isSelected));
+    });
 
-  // Render category dropdown options
-  categorySelect.innerHTML = categories
-    .map(
-      (cat) =>
-        `<option value="${cat.id}" ${
-          isEdit && data.category_id === cat.id ? "selected" : ""
-        }>${cat.name}</option>`
-    )
-    .join("");
+    this.el.title.textContent = this.isEdit
+      ? `编辑商品：${data.name}`
+      : "新增商品";
 
-  if (isEdit) {
-    nameInput.value = data.name;
-    priceInput.value = data.price;
-
-    try {
-      const arr = JSON.parse(data.options || "[]");
-      optionsInput.value = arr.join(", ");
-    } catch {
-      optionsInput.value = "";
+    if (this.isEdit) {
+      this.inputs.name.value = data.name;
+      this.inputs.category.value = data.category_id;
+      this.inputs.price.value = data.price;
+      try {
+        const optArr = JSON.parse(data.options || "[]");
+        this.inputs.options.value = optArr.join(", ");
+      } catch (e) {
+        this.inputs.options.value = "";
+      }
     }
+
+    this.focusInput(this.inputs.name);
   }
 
-  // Reliable focus method for Windows 7 environments
-  setTimeout(() => {
-    nameInput.focus();
-    nameInput.selectionStart = nameInput.selectionEnd = nameInput.value.length;
-  }, 50);
+  handleSubmit() {
+    const name = this.inputs.name.value.trim();
+    const price = parseInt(this.inputs.price.value);
 
-  document.getElementById("submit-btn").onclick = () => {
-    const result = {
-      id: isEdit ? data.id : null,
-      category_id: parseInt(categorySelect.value),
-      name: nameInput.value.trim(),
-      price: parseInt(priceInput.value),
-      options: optionsInput.value
+    if (!name || isNaN(price)) {
+      return this.showError("请检查名称和价格是否正确");
+    }
+
+    const payload = {
+      id: this.isEdit ? this.initData.id : null,
+      category_id: parseInt(this.inputs.category.value),
+      name: name,
+      price: price,
+      options: this.inputs.options.value
         .split(",")
-        .map((x) => x.trim())
-        .filter((x) => x.length > 0),
+        .map((v) => v.trim())
+        .filter((v) => v.length > 0),
     };
 
-    if (!result.name || isNaN(result.price)) {
-      errorEl.textContent = "请检查输入。";
-      nameInput.focus();
-      return;
-    }
+    this.close({ success: true, data: payload });
+  }
+}
 
-    window.api.closeProductModal({
-      success: true,
-      data: result,
-    });
-  };
-
-  document.getElementById("cancel-btn").onclick = () => {
-    window.api.closeProductModal({ success: false });
-  };
-});
+new ProductModal().init();

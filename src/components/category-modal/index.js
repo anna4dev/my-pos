@@ -1,33 +1,29 @@
-window.api.onCategoryModalInit((data) => {
-  const isEdit = !!data;
-  document.getElementById("modal-title").innerText = isEdit
-    ? `编辑分类：${data.name}`
-    : "新增分类";
+// category-modal.js
+class CategoryModal extends BaseModal {
+  constructor() {
+    super({ apiName: "Category" });
+    this.input = document.getElementById("category-name");
+  }
 
-  const input = document.getElementById("category-name");
-  if (isEdit) input.value = data.name;
+  async render(data) {
+    this.el.title.textContent = this.isEdit
+      ? `编辑分类：${data.name}`
+      : "新增分类";
+    if (this.isEdit) this.input.value = data.name;
+    setTimeout(() => this.input.focus(), 100);
+  }
 
-  // Reliable focus method for Windows 7 environments
-  setTimeout(() => {
-    input.focus();
-    input.selectionStart = input.selectionEnd = input.value.length;
-  }, 50);
-
-  document.getElementById("submit-btn").onclick = () => {
-    const name = input.value.trim();
+  handleSubmit() {
+    const name = this.input.value.trim();
     if (!name) {
-      document.getElementById("error").innerText = "请输入名称";
-      return;
+      return this.showError("请输入分类名称");
     }
 
-    window.api.closeCategoryModal({
+    this.close({
       success: true,
-      name,
-      id: isEdit ? data.id : null,
+      data: { name, id: this.isEdit ? this.initData.id : null },
     });
-  };
+  }
+}
 
-  document.getElementById("cancel-btn").onclick = () => {
-    window.api.closeCategoryModal({ success: false });
-  };
-});
+new CategoryModal().init();
