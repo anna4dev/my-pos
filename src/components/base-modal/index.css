@@ -61,3 +61,17 @@
   border-radius: 4px;
   cursor: pointer;
 }
+
+input[type="date"] {
+  font-family: "Microsoft YaHei", sans-serif;
+  padding: 7px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  outline: none;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+input[type="date"]:focus {
+  border-color: #4a90e2;
+}

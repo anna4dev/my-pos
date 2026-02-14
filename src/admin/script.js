@@ -17,10 +17,7 @@ const elements = {
   cartList: document.getElementById("cart-list"),
   grandTotal: document.getElementById("grand-total"),
   checkoutBtn: document.getElementById("checkout-btn"),
-  reportModal: document.getElementById("report-modal"),
-  exportCsvBtn: document.getElementById("export-csv-btn"),
   showReportBtn: document.getElementById("show-report-btn"),
-  closeModalBtn: document.getElementById("close-modal-btn"),
   startDateInput: document.getElementById("start-date"),
   endDateInput: document.getElementById("end-date"),
   showOrderHistoryBtn: document.getElementById("show-orders-btn"),
@@ -363,108 +360,10 @@ async function handleCheckout() {
   elements.checkoutBtn.textContent = "立即结账";
 }
 
-// --- Report Export Logic ---
-
-function formatDataForCsv(data) {
-  if (!data || data.length === 0) return "";
-
-  // Ensure numbers in data are displayed in the correct format
-  const headers = [
-    "订单号",
-    "下单时间",
-    "订单总金额",
-    "商品名称",
-    "类别",
-    "单价",
-    "数量",
-    "规格",
-  ];
-  const csvContent = [headers.join(",")];
-
-  data.forEach((row) => {
-    const rowData = [
-      row.order_no,
-      new Date(row.created_at).toLocaleString("zh-CN"),
-      (row.total_amount / 100).toFixed(2), // Convert to decimal from cents
-      row.product_name,
-      row.category_name,
-      (row.unit_price / 100).toFixed(2),
-      row.quantity,
-      row.options_used ? JSON.parse(row.options_used).join(";") : "",
-    ]
-      .map((field) => `"${String(field).replace(/"/g, '""')}"`)
-      .join(","); // CSV security handling
-
-    csvContent.push(rowData);
-  });
-
-  return csvContent.join("\n");
-}
-
-function downloadCsv(csv, filename) {
-  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-  const link = document.createElement("a");
-  if (link.download !== undefined) {
-    const url = URL.createObjectURL(blob);
-    link.setAttribute("href", url);
-    link.setAttribute("download", filename);
-    link.style.visibility = "hidden";
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  } else {
-    alert("您的浏览器不支持直接下载，请尝试其他浏览器或复制内容。");
-  }
-}
-
-async function handleExportCsv() {
-  const startDate = elements.startDateInput.value;
-  const endDate = elements.endDateInput.value;
-
-  if (!startDate || !endDate) {
-    alert("请选择完整的日期范围！");
-    return;
-  }
-
-  // Construct ISO time strings ensuring the full day range is included
-  const startISO = new Date(startDate + "T00:00:00.000Z").toISOString();
-  const endISO = new Date(endDate + "T23:59:59.999Z").toISOString();
-
-  elements.exportCsvBtn.textContent = "查询中...";
-  elements.exportCsvBtn.disabled = true;
-
-  const result = await window.api.getReports(startISO, endISO);
-
-  elements.exportCsvBtn.textContent = "导出 CSV";
-  elements.exportCsvBtn.disabled = false;
-
-  if (result.success && result.data && result.data.length > 0) {
-    const csv = formatDataForCsv(result.data);
-    const filename = `pos_report_${startDate}_to_${endDate}.csv`;
-
-    // Replace downloadCsv: Call main process to save file
-    const saveResult = await window.api.saveCsvFile(csv, filename); // <-- NEW IPC CALL
-
-    if (saveResult.success) {
-      alert(`流水导出成功！文件已保存到：\n${saveResult.path}`);
-      elements.reportModal.style.display = "none";
-    } else {
-      // User cancelled save or write failed
-      alert(`文件保存失败或已取消: ${saveResult.error || "用户取消"}`);
-    }
-  } else if (result.success && result.data.length === 0) {
-    alert("该日期范围内没有交易流水。");
-  } else {
-    alert(`导出失败: ${result.error || "未知错误"}`);
-  }
-}
-
 function showOrderListView() {
   elements.mainDiv.style.display = "none";
   elements.managementView.style.display = "none";
   elements.orderListView.style.display = "block";
-  // Ensure report modal is closed
-  elements.reportModal.style.display = "none";
 }
 
 function showProductGridView() {
@@ -1147,13 +1046,15 @@ async function init() {
   );
 
   // Report Modal listeners
-  elements.showReportBtn.addEventListener("click", () => {
-    elements.reportModal.style.display = "flex";
+  elements.showReportBtn.addEventListener("click", async () => {
+    const result = await window.api.openExportModal();
+    if (result && result.success) {
+      console.log("导出任务完成，文件保存路径:", result.path);
+      // 这里可以做一个 admin 界面上的小提示（可选）
+    } else {
+      console.log("用户取消了导出或关闭了窗口");
+    }
   });
-  elements.closeModalBtn.addEventListener("click", () => {
-    elements.reportModal.style.display = "none";
-  });
-  elements.exportCsvBtn.addEventListener("click", handleExportCsv);
 
   // Initial data load
   loadDataAndRenderPOS();

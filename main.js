@@ -230,6 +230,11 @@ app.whenReady().then(() => {
     );
   });
 
+  ipcMain.handle("open-export-modal", async (event, payload) => {
+    const parent = BrowserWindow.fromWebContents(event.sender);
+    return await openModalWithResult(parent, "export-modal", 600, 400, payload);
+  });
+
   ipcMain.on("close-modal-request", (event, result) => {
     const win = BrowserWindow.fromWebContents(event.sender);
     // trigger modal by id

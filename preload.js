@@ -84,9 +84,8 @@ contextBridge.exposeInMainWorld("api", {
   notifyModalReady: () => ipcRenderer.send("modal-ready-request"),
   sendCloseModal: (result) => ipcRenderer.send("close-modal-request", result),
 
-  // Category Modal
+  // business modals
   openCategoryModal: (data) => ipcRenderer.invoke("open-category-modal", data),
-
-  // Product Modal
   openProductModal: (data) => ipcRenderer.invoke("open-product-modal", data),
+  openExportModal: (data) => ipcRenderer.invoke("open-export-modal", data),
 });
