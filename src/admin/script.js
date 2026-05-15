@@ -116,41 +116,47 @@ function renderCart() {
     const optionsText =
       item.options && item.options.length > 0 ? item.options.join(", ") : "";
 
-    // --- 1. Create Main Content Row Container (Name + Price) ---
+    // --- 1. 上半部分：纯信息区（名称 + 数量 + 备注） ---
     const mainRowDiv = document.createElement("div");
     mainRowDiv.className = "item-main-row";
 
-    // 1a. Create item-info container
     const infoDiv = document.createElement("div");
     infoDiv.className = "item-info";
 
-    // Insert product name and quantity
-    infoDiv.textContent = `${item.name} (x${item.count})`;
+    // 菜名
+    const nameSpan = document.createElement("span");
+    nameSpan.className = "item-name";
+    nameSpan.textContent = item.name;
+    infoDiv.appendChild(nameSpan);
 
-    // Insert product specifications/options
+    // 数量 (独立出来方便大字号/变色)
+    const qtySpan = document.createElement("span");
+    qtySpan.className = "item-qty";
+    qtySpan.textContent = ` x${item.count}`;
+    infoDiv.appendChild(qtySpan);
+
+    // 备注 (换行显示)
     if (optionsText) {
-      const optionsSpan = document.createElement("span");
-      optionsSpan.className = "item-options";
-      optionsSpan.textContent = `(${optionsText})`;
-      infoDiv.appendChild(optionsSpan);
+      const optionsDiv = document.createElement("div");
+      optionsDiv.className = "item-options";
+      optionsDiv.textContent = `(${optionsText})`;
+      infoDiv.appendChild(optionsDiv);
     }
 
-    // 1b. Insert price
-    const priceDiv = document.createElement("div");
-    priceDiv.className = "item-price";
-    priceDiv.textContent = `¥ ${(itemTotal / 100).toFixed(2)}`;
-
-    // Append info and price to main row
     mainRowDiv.appendChild(infoDiv);
-    mainRowDiv.appendChild(priceDiv);
-
     li.appendChild(mainRowDiv);
 
-    // --- 2. Create Controls Row Container (New Row) ---
+    // --- 2. 下半部分：价格区 + 操作区 ---
     const controlsRowDiv = document.createElement("div");
     controlsRowDiv.className = "item-controls-row";
 
-    // 2a. Insert control buttons
+    // 2a. 价格 (现在位于左侧)
+    const priceDiv = document.createElement("div");
+    priceDiv.className = "item-price";
+    priceDiv.textContent = `¥ ${(itemTotal / 100).toFixed(2)}`;
+    controlsRowDiv.appendChild(priceDiv);
+
+    // 2b. 操作按钮 (现在位于右侧)
     const controlsDiv = document.createElement("div");
     controlsDiv.className = "item-controls";
 
@@ -171,7 +177,6 @@ function renderCart() {
     controlsDiv.appendChild(remBtn);
 
     controlsRowDiv.appendChild(controlsDiv);
-
     li.appendChild(controlsRowDiv);
 
     elements.cartList.appendChild(li);
