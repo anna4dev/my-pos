@@ -116,26 +116,26 @@ function renderCart() {
     const optionsText =
       item.options && item.options.length > 0 ? item.options.join(", ") : "";
 
-    // --- 1. 上半部分：纯信息区（名称 + 数量 + 备注） ---
+    // --- 1. [top] info part: name + qty + options ---
     const mainRowDiv = document.createElement("div");
     mainRowDiv.className = "item-main-row";
 
     const infoDiv = document.createElement("div");
     infoDiv.className = "item-info";
 
-    // 菜名
+    // 1a. name area
     const nameSpan = document.createElement("span");
     nameSpan.className = "item-name";
     nameSpan.textContent = item.name;
     infoDiv.appendChild(nameSpan);
 
-    // 数量 (独立出来方便大字号/变色)
+    // 1b. quantity area
     const qtySpan = document.createElement("span");
     qtySpan.className = "item-qty";
     qtySpan.textContent = ` x${item.count}`;
     infoDiv.appendChild(qtySpan);
 
-    // 备注 (换行显示)
+    // 1c. options area
     if (optionsText) {
       const optionsDiv = document.createElement("div");
       optionsDiv.className = "item-options";
@@ -146,17 +146,17 @@ function renderCart() {
     mainRowDiv.appendChild(infoDiv);
     li.appendChild(mainRowDiv);
 
-    // --- 2. 下半部分：价格区 + 操作区 ---
+    // --- 2. [bottom] price area + controls area ---
     const controlsRowDiv = document.createElement("div");
     controlsRowDiv.className = "item-controls-row";
 
-    // 2a. 价格 (现在位于左侧)
+    // 2a. price area (now located on the left)
     const priceDiv = document.createElement("div");
     priceDiv.className = "item-price";
     priceDiv.textContent = `¥ ${(itemTotal / 100).toFixed(2)}`;
     controlsRowDiv.appendChild(priceDiv);
 
-    // 2b. 操作按钮 (现在位于右侧)
+    // 2b. controls area (now located on the right)
     const controlsDiv = document.createElement("div");
     controlsDiv.className = "item-controls";
 

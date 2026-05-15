@@ -143,7 +143,6 @@ body {
 .cart-item {
   padding: 10px 0;
   border-bottom: 1px solid #bbb;
-  position: relative;
 }
 
 /* product name, price */
@@ -154,13 +153,9 @@ body {
 }
 
 .item-info {
-  font-weight: bold;
   display: flex;
   align-items: center;
   line-height: 1.2;
-}
-
-.item-name {
   font-weight: bold;
 }
 
