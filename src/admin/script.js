@@ -116,18 +116,26 @@ function renderCart() {
     const optionsText =
       item.options && item.options.length > 0 ? item.options.join(", ") : "";
 
-    // --- 1. Create Main Content Row Container (Name + Price) ---
+    // --- 1. [top] info part: name + qty + options ---
     const mainRowDiv = document.createElement("div");
     mainRowDiv.className = "item-main-row";
 
-    // 1a. Create item-info container
     const infoDiv = document.createElement("div");
     infoDiv.className = "item-info";
 
-    // Insert product name and quantity
-    infoDiv.textContent = `${item.name} (x${item.count})`;
+    // 1a. name area
+    const nameSpan = document.createElement("span");
+    nameSpan.className = "item-name";
+    nameSpan.textContent = item.name;
+    infoDiv.appendChild(nameSpan);
 
-    // Insert product specifications/options
+    // 1b. quantity area
+    const qtySpan = document.createElement("span");
+    qtySpan.className = "item-qty";
+    qtySpan.textContent = ` x${item.count}`;
+    infoDiv.appendChild(qtySpan);
+
+    // 1c. options area
     if (optionsText) {
       const optionsSpan = document.createElement("span");
       optionsSpan.className = "item-options";
@@ -135,22 +143,20 @@ function renderCart() {
       infoDiv.appendChild(optionsSpan);
     }
 
-    // 1b. Insert price
-    const priceDiv = document.createElement("div");
-    priceDiv.className = "item-price";
-    priceDiv.textContent = `¥ ${(itemTotal / 100).toFixed(2)}`;
-
-    // Append info and price to main row
     mainRowDiv.appendChild(infoDiv);
-    mainRowDiv.appendChild(priceDiv);
-
     li.appendChild(mainRowDiv);
 
-    // --- 2. Create Controls Row Container (New Row) ---
+    // --- 2. [bottom] price area + controls area ---
     const controlsRowDiv = document.createElement("div");
     controlsRowDiv.className = "item-controls-row";
 
-    // 2a. Insert control buttons
+    // 2a. price area (now located on the left)
+    const priceDiv = document.createElement("div");
+    priceDiv.className = "item-price";
+    priceDiv.textContent = `¥ ${(itemTotal / 100).toFixed(2)}`;
+    controlsRowDiv.appendChild(priceDiv);
+
+    // 2b. controls area (now located on the right)
     const controlsDiv = document.createElement("div");
     controlsDiv.className = "item-controls";
 
@@ -171,7 +177,6 @@ function renderCart() {
     controlsDiv.appendChild(remBtn);
 
     controlsRowDiv.appendChild(controlsDiv);
-
     li.appendChild(controlsRowDiv);
 
     elements.cartList.appendChild(li);
