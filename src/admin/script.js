@@ -137,10 +137,10 @@ function renderCart() {
 
     // 1c. options area
     if (optionsText) {
-      const optionsDiv = document.createElement("div");
-      optionsDiv.className = "item-options";
-      optionsDiv.textContent = `(${optionsText})`;
-      infoDiv.appendChild(optionsDiv);
+      const optionsSpan = document.createElement("span");
+      optionsSpan.className = "item-options";
+      optionsSpan.textContent = `(${optionsText})`;
+      infoDiv.appendChild(optionsSpan);
     }
 
     mainRowDiv.appendChild(infoDiv);
